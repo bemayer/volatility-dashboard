@@ -69,10 +69,10 @@ A comprehensive R Shiny application for modeling and forecasting financial volat
 
 Choose from multiple volatility definitions:
 
-- **Absolute Returns**: `|r_t|` - Simple absolute value of returns
-- **Squared Returns**: `r_t²` - Classical realized variance proxy
-- **Rolling RMS**: `√(1/n Σr²_t)` - Root mean square over rolling window
-- **Rolling Standard Deviation**: `√(1/(n-1) Σ(r_t - r̄)²)` - Sample standard deviation
+- **Absolute Returns**: $|r_t|$ - Simple absolute value of returns
+- **Squared Returns**: $r_t^2$ - Classical realized variance proxy
+- **Rolling RMS**: $\sqrt{\frac{1}{n} \sum r^2_t}$ - Root mean square over rolling window
+- **Rolling Standard Deviation**: $\sqrt{\frac{1}{n-1} \sum (r_t - \bar{r})^2}$ - Sample standard deviation
 
 ## 🎯 Performance Metrics
 
@@ -80,12 +80,12 @@ All models evaluated using comprehensive metrics:
 
 | Metric | Formula | Description |
 |--------|---------|-------------|
-| **MSE** | `1/T Σ(σ_t - σ̂_t)²` | Mean Squared Error |
-| **RMSE** | `√(MSE)` | Root Mean Squared Error |
-| **MAE** | `1/T Σ|σ_t - σ̂_t|` | Mean Absolute Error |
-| **MAPE** | `100/T Σ|σ_t - σ̂_t|/σ_t` | Mean Absolute Percentage Error |
-| **QLIKE** | `1/T Σ[ln(σ̂_t) + σ_t/σ̂_t]` | Quasi-Maximum Likelihood |
-| **LogLoss** | `1/T Σ[ln(σ̂_t) + σ_t/σ̂_t - ln(σ_t) - 1]` | Logarithmic Loss |
+| **MSE** | $\frac{1}{T} \sum_{t=1}^{T} (\sigma_t - \hat{\sigma}_t)^2$ | Mean Squared Error |
+| **RMSE** | $\sqrt{MSE}$ | Root Mean Squared Error |
+| **MAE** | $\frac{1}{T} \sum_{t=1}^{T} |\sigma_t - \hat{\sigma}_t|$ | Mean Absolute Error |
+| **MAPE** | $\frac{100}{T} \sum_{t=1}^{T} \frac{|\sigma_t - \hat{\sigma}_t|}{\sigma_t}$ | Mean Absolute Percentage Error |
+| **QLIKE** | $\frac{1}{T} \sum_{t=1}^{T} [\ln(\hat{\sigma}_t) + \frac{\sigma_t}{\hat{\sigma}_t}]$ | Quasi-Maximum Likelihood |
+| **LogLoss** | $\frac{1}{T} \sum_{t=1}^{T} [\ln(\hat{\sigma}_t) + \frac{\sigma_t}{\hat{\sigma}_t} - \ln(\sigma_t) - 1]$ | Logarithmic Loss |
 
 ## 🚀 Quick Start
 
@@ -97,7 +97,7 @@ R >= 4.0.0
 
 # Core packages
 install.packages(c(
-  "shiny", "shinydashboard", "DT", "plotly", 
+  "shiny", "shinydashboard", "DT", "plotly",
   "dplyr", "quantmod", "rugarch", "xts", "zoo",
   "moments", "forecast", "ggplot2", "viridis",
   "tseries", "FinTS", "nortest"
