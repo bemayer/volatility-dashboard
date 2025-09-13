@@ -4,14 +4,14 @@
 # ============================================================================
 
 #' Download data from Yahoo Finance
-#' @param symbol Stock symbol (e.g., "BTC - USD")
+#' @param symbol Stock symbol (e.g., "BTC-USD")
 #' @param from Start date
 #' @param to End date
 #' @return xts object with OHLCV data
-get_yahoo_data < -function(symbol, from, to) {
+get_yahoo_data <- function(symbol, from, to) {
   tryCatch(
     {
-      env < -new.env()
+      env <- new.env()
       suppressWarnings({
         getSymbols(symbol,
           env = env, src = "yahoo", from = from, to = to,
@@ -19,7 +19,7 @@ get_yahoo_data < -function(symbol, from, to) {
         )
       })
 
-      data < -env[[ls(env)[1]]]
+      data <- env[[ls(env)[1]]]
 
       if (is.null(data) || nrow(data) == 0) {
         stop("No data retrieved for symbol: ", symbol)
@@ -37,28 +37,28 @@ get_yahoo_data < -function(symbol, from, to) {
 #' @param prices xts object with price data
 #' @param price_column Name of the price column to use
 #' @return list with dates, prices, and returns
-process_price_data < -function(prices, price_column = NULL) {
+process_price_data <- function(prices, price_column = NULL) {
   # If no specific column specified, use Close price
   if (is.null(price_column)) {
-    price_col_names < -names(prices)
-    close_cols < -grep("Close|Adjusted", price_col_names, value = TRUE)
+    price_col_names <- names(prices)
+    close_cols <- grep("Close|Adjusted", price_col_names, value = TRUE)
     if (length(close_cols) > 0) {
-      price_column < -close_cols[1]
+      price_column <- close_cols[1]
     } else {
-      price_column < -price_col_names[ncol(prices)] # Use last column
+      price_column <- price_col_names[ncol(prices)] # Use last column
     }
   }
 
-  clean_prices < -prices[, price_column]
-  clean_prices < -na.omit(clean_prices)
+  clean_prices <- prices[, price_column]
+  clean_prices <- na.omit(clean_prices)
 
   if (nrow(clean_prices) < 10) {
     stop("Insufficient data points after cleaning")
   }
 
   # Calculate returns
-  returns < -diff(log(clean_prices))
-  returns < -na.omit(returns)
+  returns <- diff(log(clean_prices))
+  returns <- na.omit(returns)
 
   return(list(
     dates = index(clean_prices),
@@ -95,12 +95,12 @@ read_csv_data <- function(file_path, date_col, price_col, header = TRUE,
       }
 
       # Process dates
-      data[[date_col]] < -as.Date(data[[date_col]])
-      data < -data[order(data[[date_col]]), ]
+      data[[date_col]] <- as.Date(data[[date_col]])
+      data <- data[order(data[[date_col]]), ]
 
       # Clean price data
-      data[[price_col]] < -as.numeric(data[[price_col]])
-      data < -data[!is.na(data[[date_col]]) & !is.na(data[[price_col]])]
+      data[[price_col]] <- as.numeric(data[[price_col]])
+      data <- data[!is.na(data[[date_col]]) & !is.na(data[[price_col]])]
 
       if (nrow(data) < 10) {
         stop("Insufficient valid data points")
@@ -121,16 +121,16 @@ read_csv_data <- function(file_path, date_col, price_col, header = TRUE,
 
 #' Get popular financial assets metadata
 #' @return List of popular assets with descriptions
-get_popular_assets < -function() {
+get_popular_assets <- function() {
   list(
-    "BTC - USD" = list(
+    "BTC-USD" = list(
       name = "Bitcoin",
-      description = "Cryptocurrency  -  Bitcoin to USD",
+      description = "Cryptocurrency - Bitcoin to USD",
       category = "Crypto"
     ),
-    " ^ GSPC" = list(
+    "^GSPC" = list(
       name = "S&P 500",
-      description = "Stock Index  -  Standard & Poor's 500",
+      description = "Stock Index - Standard & Poor's 500",
       category = "Equity Index"
     ),
     "GLD" = list(
@@ -138,24 +138,24 @@ get_popular_assets < -function() {
       description = "SPDR Gold Shares ETF",
       category = "Commodity"
     ),
-    " ^ VIX" = list(
+    "^VIX" = list(
       name = "VIX",
       description = "CBOE Volatility Index",
       category = "Volatility"
     ),
-    "EURUSD = X" = list(
+    "EURUSD=X" = list(
       name = "EUR / USD",
       description = "Euro to US Dollar Exchange Rate",
       category = "FX"
     ),
-    "CL = F" = list(
+    "CL=F" = list(
       name = "Crude Oil",
       description = "Crude Oil Futures",
       category = "Commodity"
     ),
-    " ^ TNX" = list(
-      name = "10 - Year Treasury",
-      description = "US 10 - Year Treasury Yield",
+    "^TNX" = list(
+      name = "10-Year Treasury",
+      description = "US 10-Year Treasury Yield",
       category = "Bond"
     ),
     "AAPL" = list(
@@ -179,10 +179,10 @@ get_popular_assets < -function() {
 #' Validate Yahoo Finance symbol
 #' @param symbol Symbol to validate
 #' @return Boolean indicating if symbol is valid
-validate_symbol < -function(symbol) {
+validate_symbol <- function(symbol) {
   tryCatch(
     {
-      test_data < -get_yahoo_data(symbol, Sys.Date() - 10, Sys.Date())
+      test_data <- get_yahoo_data(symbol, Sys.Date() - 10, Sys.Date())
       return(nrow(test_data) > 0)
     },
     error = function(e) {

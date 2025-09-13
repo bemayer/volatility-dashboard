@@ -61,8 +61,8 @@ ui <- dashboardPage(
     # Custom CSS
     tags$head(
       tags$style(HTML("
-        .content - wrapper, .right - side {
-          background - color: #f8f9fa;
+        .content-wrapper, .right-side {
+          background-color: #f8f9fa;
         }
         .box.box - solid.box - primary > .box - header {
           background: linear - gradient(45deg, #3c8dbc, #5cb85c);
@@ -133,33 +133,6 @@ server <- function(input, output, session) {
 
   # Modeling tab server
   modeling_server <- callModule(modeling_tab_server, "modeling_tab", values)
-
-  # Welcome message
-  observe({
-    showModal(modalDialog(
-      title = "Welcome to Volatility Modeling Dashboard",
-      HTML("
-        <div style = 'text - align: center;'>
-          <h4>Professional Financial Volatility Analysis< / h4>
-          <br>
-          <p><strong>Features:< / strong>< / p>
-          <ul style = 'text - align: left; margin: 20px;'>
-            <li>📊 Interactive data selection from Yahoo Finance< / li>
-            <li>📈 Comprehensive statistical analysis< / li>
-            <li>🔧 Dynamic model configuration< / li>
-            <li>📋 Sortable performance comparison< / li>
-            <li>📁 Export capabilities< / li>
-          < / ul>
-          <br>
-          <p>
-            <em>Start by selecting your data in the Data Selection tab.< / em>
-          < / p>
-        < / div>
-      "),
-      easyClose = TRUE,
-      footer = modalButton("Get Started")
-    ))
-  })
 }
 
 # Run the application

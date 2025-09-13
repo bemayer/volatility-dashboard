@@ -108,8 +108,7 @@ calculate_bipower_variation <- function(intraday_returns) {
 
 #' Main function to calculate target volatility measure
 #' @param returns Vector of returns
-#' @param measure_type Type of measure ("absolute", "squared",
-#'   "rolling_rms", "rolling_std")
+#' @param measure_type Type of measure ("absolute", "squared", "rolling_std")
 #' @param window Window size for rolling measures
 #' @param dates Optional dates vector
 #' @return List with volatility values and metadata
@@ -137,22 +136,9 @@ calculate_target_volatility <- function(returns, measure_type,
       list(
         values = vol,
         dates = dates,
-        name = "Squared Returns r_t²",
-        formula = "r_t²",
+        name = "Squared Returns r_t^2",
+        formula = "r_t^2",
         description = "Squared returns (realized variance proxy)"
-      )
-    },
-
-    "rolling_rms" = {
-      if (is.null(window)) window <- 20
-      vol <- calculate_rolling_rms(returns, window)
-      list(
-        values = vol,
-        dates = dates,
-        name = paste0(window, "-Day Rolling RMS"),
-        formula = paste0("sqrt(1/", window, " * Σr²_t)"),
-        description = paste("Rolling root mean square over", window, "periods"),
-        window = window
       )
     },
 
@@ -224,16 +210,9 @@ get_available_measures <- function() {
       description = "Squared daily returns (realized variance proxy)",
       requires_window = FALSE
     ),
-    "rolling_rms" = list(
-      name = "Rolling RMS",
-      formula = "√(1/n Σr²_t)",
-      description = "Rolling root mean square of returns",
-      requires_window = TRUE,
-      default_window = 20
-    ),
     "rolling_std" = list(
       name = "Rolling Standard Deviation",
-      formula = "√(1/(n-1) Σ(r_t - r̄)²)",
+      formula = "\\sqrt{\\frac{1}{n-1} \\sum (r_t - \\bar{r})^2}",
       description = "Rolling sample standard deviation",
       requires_window = TRUE,
       default_window = 20

@@ -125,7 +125,7 @@ calculate_log_loss <- function(actual, predicted) {
 
   # Log Loss = mean(log(predicted) + actual / predicted - log(actual) - 1)
   mean(log(predicted_clean) + actual_clean / predicted_clean -
-         log(actual_clean) - 1)
+    log(actual_clean) - 1)
 }
 
 #' Calculate all metrics for a single model
@@ -332,33 +332,33 @@ get_metric_descriptions <- function() {
   list(
     MSE = list(
       name = "Mean Squared Error",
-      formula = "1 / T Σ(σ_t - σ̂_t)²",
+      formula = "$$\\text{MSE} = \\frac{1}{T} \\sum_{t=1}^T (\\sigma_t - \\hat{\\sigma}_t)^2$$",
       description = "Average of squared forecast errors"
     ),
     RMSE = list(
       name = "Root Mean Squared Error",
-      formula = "√(MSE)",
+      formula = "$$\\text{RMSE} = \\sqrt{\\text{MSE}}$$",
       description = "Square root of MSE, in same units as data"
     ),
     MAE = list(
       name = "Mean Absolute Error",
-      formula = "1 / T Σ|σ_t - σ̂_t|",
+      formula = "$$\\text{MAE} = \\frac{1}{T} \\sum_{t=1}^T |\\sigma_t - \\hat{\\sigma}_t|$$",
       description = "Average of absolute forecast errors"
     ),
     MAPE = list(
       name = "Mean Absolute Percentage Error",
-      formula = "100 / T Σ|σ_t - σ̂_t| / σ_t",
-      description = "Average percentage error (scale - free)"
+      formula = "$$\\text{MAPE} = \\frac{100}{T} \\sum_{t=1}^T \\frac{|\\sigma_t - \\hat{\\sigma}_t|}{\\sigma_t}$$",
+      description = "Average percentage error (scale-free)"
     ),
     QLIKE = list(
-      name = "Quasi - Maximum Likelihood",
-      formula = "1 / T Σ[ln(σ̂_t) + σ_t / σ̂_t]",
-      description = "Likelihood - based loss function"
+      name = "Quasi-Maximum Likelihood",
+      formula = "$$\\text{QLIKE} = \\frac{1}{T} \\sum_{t=1}^T [\\ln(\\hat{\\sigma}_t) + \\frac{\\sigma_t}{\\hat{\\sigma}_t}]$$",
+      description = "Likelihood-based loss function"
     ),
     LogLoss = list(
       name = "Logarithmic Loss",
-      formula = "1 / T Σ[ln(σ̂_t) + σ_t / σ̂_t - ln(σ_t) - 1]",
-      description = "Log - likelihood loss function"
+      formula = "$$\\text{LogLoss} = \\frac{1}{T} \\sum_{t=1}^T [\\ln(\\hat{\\sigma}_t) + \\frac{\\sigma_t}{\\hat{\\sigma}_t} - \\ln(\\sigma_t) - 1]$$",
+      description = "Log-likelihood loss function"
     )
   )
 }

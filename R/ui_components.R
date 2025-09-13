@@ -281,7 +281,7 @@ help_section <- function(title, content, collapsed = TRUE) {
     width = 12,
     div(
       style = "padding: 10px;",
-      HTML(content)
+      withMathJax(HTML(content))
     )
   )
 }

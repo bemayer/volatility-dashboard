@@ -30,7 +30,7 @@ fit_naive_models <- function(train, full) {
 
   results <- list()
 
-  # Historical Average  -  use FULL DATASET average
+  # Historical Average - use FULL DATASET average
   if (!is.null(full_target)) {
     hist_mean <- mean(full_target, na.rm = TRUE)
     debug_log(paste("Historical Average (full dataset):", hist_mean))
@@ -69,7 +69,7 @@ fit_naive_models <- function(train, full) {
   } else {
     # Fallback: use last training observation
     last_obs <- tail(train_target[!is.na(train_target)], 1)
-    debug_log(paste("Random Walk fallback  -  last training obs:", last_obs))
+    debug_log(paste("Random Walk fallback - last training obs:", last_obs))
     forecasts_rw <- rep(last_obs, test_length)
   }
 
@@ -81,7 +81,7 @@ fit_naive_models <- function(train, full) {
   )
 
   debug_log(paste(
-    "Naive models predictions  -  Historical:", hist_mean,
+    "Naive models predictions - Historical:", hist_mean,
     "Random Walk start:", forecasts_rw[1]
   ))
   results
