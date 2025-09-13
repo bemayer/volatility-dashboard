@@ -7,31 +7,33 @@
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return MSE value
-calculate_mse  <-  function(actual, predicted) {
+calculate_mse <- function(actual, predicted) {
   if (length(actual) != length(predicted)) {
     stop("Actual and predicted vectors must have same length")
   }
 
   # Remove missing values
-  valid_idx  <-  !is.na(actual) & !is.na(predicted) & is.finite(actual) &
+  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
     is.finite(predicted)
-  actual_clean  <-  actual[valid_idx]
-  predicted_clean  <-  predicted[valid_idx]
+  actual_clean <- actual[valid_idx]
+  predicted_clean <- predicted[valid_idx]
 
   if (length(actual_clean) == 0) {
     return(NA)
   }
 
-  mean((actual_clean - predicted_clean) ^ 2)
+  mean((actual_clean - predicted_clean)^2)
 }
 
 #' Calculate Root Mean Squared Error
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return RMSE value
-calculate_rmse  <-  function(actual, predicted) {
-  mse  <-  calculate_mse(actual, predicted)
-  if (is.na(mse)) return(NA)
+calculate_rmse <- function(actual, predicted) {
+  mse <- calculate_mse(actual, predicted)
+  if (is.na(mse)) {
+    return(NA)
+  }
   sqrt(mse)
 }
 
@@ -39,16 +41,16 @@ calculate_rmse  <-  function(actual, predicted) {
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return MAE value
-calculate_mae  <-  function(actual, predicted) {
+calculate_mae <- function(actual, predicted) {
   if (length(actual) != length(predicted)) {
     stop("Actual and predicted vectors must have same length")
   }
 
   # Remove missing values
-  valid_idx  <-  !is.na(actual) & !is.na(predicted) & is.finite(actual) &
+  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
     is.finite(predicted)
-  actual_clean  <-  actual[valid_idx]
-  predicted_clean  <-  predicted[valid_idx]
+  actual_clean <- actual[valid_idx]
+  predicted_clean <- predicted[valid_idx]
 
   if (length(actual_clean) == 0) {
     return(NA)
@@ -61,16 +63,16 @@ calculate_mae  <-  function(actual, predicted) {
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return MAPE value (in percentage)
-calculate_mape  <-  function(actual, predicted) {
+calculate_mape <- function(actual, predicted) {
   if (length(actual) != length(predicted)) {
     stop("Actual and predicted vectors must have same length")
   }
 
   # Remove missing values and zero actual values
-  valid_idx  <-  !is.na(actual) & !is.na(predicted) & is.finite(actual) &
+  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
     is.finite(predicted) & actual != 0
-  actual_clean  <-  actual[valid_idx]
-  predicted_clean  <-  predicted[valid_idx]
+  actual_clean <- actual[valid_idx]
+  predicted_clean <- predicted[valid_idx]
 
   if (length(actual_clean) == 0) {
     return(NA)
@@ -83,16 +85,16 @@ calculate_mape  <-  function(actual, predicted) {
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return QLIKE value
-calculate_qlike  <-  function(actual, predicted) {
+calculate_qlike <- function(actual, predicted) {
   if (length(actual) != length(predicted)) {
     stop("Actual and predicted vectors must have same length")
   }
 
   # Remove missing values and ensure positive values
-  valid_idx  <-  !is.na(actual) & !is.na(predicted) & is.finite(actual) &
+  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
     is.finite(predicted) & actual > 0 & predicted > 0
-  actual_clean  <-  actual[valid_idx]
-  predicted_clean  <-  predicted[valid_idx]
+  actual_clean <- actual[valid_idx]
+  predicted_clean <- predicted[valid_idx]
 
   if (length(actual_clean) == 0) {
     return(NA)
@@ -106,16 +108,16 @@ calculate_qlike  <-  function(actual, predicted) {
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return LogLoss value
-calculate_log_loss  <-  function(actual, predicted) {
+calculate_log_loss <- function(actual, predicted) {
   if (length(actual) != length(predicted)) {
     stop("Actual and predicted vectors must have same length")
   }
 
   # Remove missing values and ensure positive values
-  valid_idx  <-  !is.na(actual) & !is.na(predicted) & is.finite(actual) &
+  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
     is.finite(predicted) & actual > 0 & predicted > 0
-  actual_clean  <-  actual[valid_idx]
-  predicted_clean  <-  predicted[valid_idx]
+  actual_clean <- actual[valid_idx]
+  predicted_clean <- predicted[valid_idx]
 
   if (length(actual_clean) == 0) {
     return(NA)
@@ -130,7 +132,7 @@ calculate_log_loss  <-  function(actual, predicted) {
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return Named list of all metrics
-calculate_all_metrics  <-  function(actual, predicted) {
+calculate_all_metrics <- function(actual, predicted) {
   list(
     MSE = calculate_mse(actual, predicted),
     RMSE = calculate_rmse(actual, predicted),
@@ -145,24 +147,24 @@ calculate_all_metrics  <-  function(actual, predicted) {
 #' @param actual Vector of actual values
 #' @param model_results List of model results with predictions
 #' @return Data frame with metrics for all models
-evaluate_all_models  <-  function(actual, model_results) {
+evaluate_all_models <- function(actual, model_results) {
   if (length(model_results) == 0) {
     return(data.frame())
   }
 
-  metrics_list  <-  list()
+  metrics_list <- list()
 
   for (model_name in names(model_results)) {
-    model_result  <-  model_results[[model_name]]
+    model_result <- model_results[[model_name]]
 
     if (!is.null(model_result$predictions)) {
-      predicted  <-  model_result$predictions
+      predicted <- model_result$predictions
 
       # Calculate all metrics
-      metrics  <-  calculate_all_metrics(actual, predicted)
+      metrics <- calculate_all_metrics(actual, predicted)
 
       # Create row for results table
-      metrics_row  <-  data.frame(
+      metrics_row <- data.frame(
         Model = model_name,
         Type = model_result$model_type,
         MSE = metrics$MSE,
@@ -174,7 +176,7 @@ evaluate_all_models  <-  function(actual, model_results) {
         stringsAsFactors = FALSE
       )
 
-      metrics_list[[model_name]]  <-  metrics_row
+      metrics_list[[model_name]] <- metrics_row
     }
   }
 
@@ -183,11 +185,11 @@ evaluate_all_models  <-  function(actual, model_results) {
   }
 
   # Combine all results
-  results_df  <-  do.call(rbind, metrics_list)
-  rownames(results_df)  <-  NULL
+  results_df <- do.call(rbind, metrics_list)
+  rownames(results_df) <- NULL
 
   # Sort by RMSE (ascending)
-  results_df  <-  results_df[order(results_df$RMSE, na.last = TRUE), ]
+  results_df <- results_df[order(results_df$RMSE, na.last = TRUE), ]
 
   results_df
 }
@@ -199,11 +201,10 @@ evaluate_all_models  <-  function(actual, model_results) {
 #' @return List with test statistic and p - value
 diebold_mariano_test <- function(errors1, errors2,
                                  alternative = "two.sided") {
-
   # Calculate loss differential
-  d  <-  errors1 ^ 2 - errors2 ^ 2
-  d_bar  <-  mean(d, na.rm = TRUE)
-  n  <-  length(d)
+  d <- errors1^2 - errors2^2
+  d_bar <- mean(d, na.rm = TRUE)
+  n <- length(d)
 
   if (n < 2) {
     return(list(
@@ -212,22 +213,22 @@ diebold_mariano_test <- function(errors1, errors2,
   }
 
   # Calculate variance of loss differential
-  gamma0  <-  var(d, na.rm = TRUE)
+  gamma0 <- var(d, na.rm = TRUE)
 
   if (gamma0 <= 0) {
     return(list(statistic = NA, p_value = NA, message = "Zero variance"))
   }
 
   # DM test statistic
-  dm_stat  <-  d_bar / sqrt(gamma0 / n)
+  dm_stat <- d_bar / sqrt(gamma0 / n)
 
   # Calculate p - value
   if (alternative == "two.sided") {
-    p_value  <-  2 * (1 - pnorm(abs(dm_stat)))
+    p_value <- 2 * (1 - pnorm(abs(dm_stat)))
   } else if (alternative == "less") {
-    p_value  <-  pnorm(dm_stat)
+    p_value <- pnorm(dm_stat)
   } else if (alternative == "greater") {
-    p_value  <-  1 - pnorm(dm_stat)
+    p_value <- 1 - pnorm(dm_stat)
   } else {
     stop("Invalid alternative hypothesis")
   }
@@ -245,38 +246,40 @@ diebold_mariano_test <- function(errors1, errors2,
 #' @param model_results List of model results
 #' @param alpha Significance level
 #' @return Matrix of p - values for pairwise comparisons
-pairwise_dm_tests  <-  function(actual, model_results, alpha = 0.05) {
-  model_names  <-  names(model_results)
-  n_models  <-  length(model_names)
+pairwise_dm_tests <- function(actual, model_results, alpha = 0.05) {
+  model_names <- names(model_results)
+  n_models <- length(model_names)
 
   if (n_models < 2) {
     return(NULL)
   }
 
   # Initialize results matrix
-  p_value_matrix <- matrix(NA, nrow = n_models, ncol = n_models,
-                           dimnames = list(model_names, model_names))
+  p_value_matrix <- matrix(NA,
+    nrow = n_models, ncol = n_models,
+    dimnames = list(model_names, model_names)
+  )
 
   # Calculate forecast errors for all models
-  errors_list  <-  list()
+  errors_list <- list()
   for (i in 1:n_models) {
-    model_name  <-  model_names[i]
-    predicted  <-  model_results[[model_name]]$predictions
-    errors_list[[model_name]]  <-  actual - predicted
+    model_name <- model_names[i]
+    predicted <- model_results[[model_name]]$predictions
+    errors_list[[model_name]] <- actual - predicted
   }
 
   # Pairwise tests
   for (i in 1:(n_models - 1)) {
     for (j in (i + 1):n_models) {
-      model1  <-  model_names[i]
-      model2  <-  model_names[j]
+      model1 <- model_names[i]
+      model2 <- model_names[j]
 
       dm_result <- diebold_mariano_test(
         errors_list[[model1]], errors_list[[model2]]
       )
 
-      p_value_matrix[i, j]  <-  dm_result$p_value
-      p_value_matrix[j, i]  <-  dm_result$p_value  # Symmetric matrix
+      p_value_matrix[i, j] <- dm_result$p_value
+      p_value_matrix[j, i] <- dm_result$p_value # Symmetric matrix
     }
   }
 
@@ -287,22 +290,23 @@ pairwise_dm_tests  <-  function(actual, model_results, alpha = 0.05) {
 #' @param metrics_df Data frame of metrics
 #' @param digits Number of digits for rounding
 #' @return Data frame with formatted metrics
-format_metrics_table  <-  function(metrics_df, digits = 6) {
+format_metrics_table <- function(metrics_df, digits = 6) {
   if (nrow(metrics_df) == 0) {
     return(metrics_df)
   }
 
-  formatted_df  <-  metrics_df
+  formatted_df <- metrics_df
 
   # Format numeric columns
-  numeric_cols  <-  c("MSE", "RMSE", "MAE", "MAPE", "QLIKE", "LogLoss")
+  numeric_cols <- c("MSE", "RMSE", "MAE", "MAPE", "QLIKE", "LogLoss")
 
   for (col in numeric_cols) {
     if (col %in% names(formatted_df)) {
       if (col == "MSE") {
         # Scientific notation for MSE
         formatted_df[[col]] <- formatC(
-          formatted_df[[col]], format = "e", digits = 2
+          formatted_df[[col]],
+          format = "e", digits = 2
         )
       } else if (col == "MAPE") {
         # Percentage format for MAPE
@@ -312,7 +316,8 @@ format_metrics_table  <-  function(metrics_df, digits = 6) {
       } else {
         # Fixed point notation for others
         formatted_df[[col]] <- formatC(
-          formatted_df[[col]], format = "f", digits = digits
+          formatted_df[[col]],
+          format = "f", digits = digits
         )
       }
     }
@@ -323,7 +328,7 @@ format_metrics_table  <-  function(metrics_df, digits = 6) {
 
 #' Get metric descriptions
 #' @return List of metric descriptions with formulas
-get_metric_descriptions  <-  function() {
+get_metric_descriptions <- function() {
   list(
     MSE = list(
       name = "Mean Squared Error",
@@ -362,24 +367,24 @@ get_metric_descriptions  <-  function() {
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return List with validation results
-validate_metrics_inputs  <-  function(actual, predicted) {
-  errors  <-  c()
-  warnings  <-  c()
+validate_metrics_inputs <- function(actual, predicted) {
+  errors <- c()
+  warnings <- c()
 
   if (length(actual) != length(predicted)) {
-    errors  <-  c(errors, "Actual and predicted vectors must have same length")
+    errors <- c(errors, "Actual and predicted vectors must have same length")
   }
 
   if (length(actual) == 0) {
-    errors  <-  c(errors, "Input vectors cannot be empty")
+    errors <- c(errors, "Input vectors cannot be empty")
   }
 
   if (all(is.na(actual))) {
-    errors  <-  c(errors, "All actual values are missing")
+    errors <- c(errors, "All actual values are missing")
   }
 
   if (all(is.na(predicted))) {
-    errors  <-  c(errors, "All predicted values are missing")
+    errors <- c(errors, "All predicted values are missing")
   }
 
   # Check for negative values (problematic for QLIKE and LogLoss)
