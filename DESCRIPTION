@@ -1,0 +1,44 @@
+Package: VolatilityDashboard
+Type: Shiny
+Title: Professional Financial Volatility Modeling Dashboard
+Version: 1.0.0
+Authors@R: 
+    person("Developer", "Name", , "developer@example.com", role = c("aut", "cre"))
+Description: A comprehensive R Shiny application for modeling and forecasting 
+    financial volatility using econometric and machine learning approaches. 
+    Features dynamic model configuration, statistical analysis, and performance 
+    comparison with publication-quality visualizations.
+License: MIT + file LICENSE
+URL: https://github.com/your-username/volatility-dashboard
+BugReports: https://github.com/your-username/volatility-dashboard/issues
+Depends: 
+    R (>= 4.0.0)
+Imports:
+    shiny (>= 1.7.0),
+    shinydashboard (>= 0.7.0),
+    DT (>= 0.20),
+    plotly (>= 4.9.0),
+    dplyr (>= 1.0.0),
+    quantmod (>= 0.4.18),
+    rugarch (>= 1.4.4),
+    xts (>= 0.12.0),
+    zoo (>= 1.8.0),
+    moments (>= 0.14),
+    forecast (>= 8.15),
+    ggplot2 (>= 3.3.0),
+    viridis (>= 0.6.0),
+    tseries (>= 0.10.47),
+    FinTS (>= 0.4.6),
+    nortest (>= 1.0.4),
+    htmltools,
+    jsonlite
+Suggests:
+    keras,
+    tensorflow,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.0
+LazyData: true
