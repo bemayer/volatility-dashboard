@@ -442,8 +442,9 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
 #' @param train List with target and returns from training period
 #' @param full List with target and returns from full dataset
 #' @param garch_specs List of GARCH specifications
+#' @param target_type Type of target volatility ("squared", "rolling_std", "absolute")
 #' @return List of GARCH model predictions
-fit_garch_models <- function(train, full, garch_specs) {
+fit_garch_models <- function(train, full, garch_specs, target_type = "squared") {
   train_target <- train$target
   full_target <- full$target
   test_length <- length(full_target) - length(train_target)
@@ -490,10 +491,20 @@ fit_garch_models <- function(train, full, garch_specs) {
                       n.ahead = 1,
                       n.roll = test_length - 1
                     )
-                    predictions <- as.numeric(sigma(forecast))^2
+                    # Adjust scale based on target type
+                    if (target_type == "rolling_std") {
+                      predictions <- as.numeric(sigma(forecast))  # Standard deviation
+                    } else {
+                      predictions <- as.numeric(sigma(forecast))^2  # Variance
+                    }
                   } else {
                     forecast <- ugarchforecast(combined_fit, n.ahead = 1)
-                    predictions <- as.numeric(sigma(forecast))^2
+                    # Adjust scale based on target type
+                    if (target_type == "rolling_std") {
+                      predictions <- as.numeric(sigma(forecast))  # Standard deviation
+                    } else {
+                      predictions <- as.numeric(sigma(forecast))^2  # Variance
+                    }
                   }
 
                   debug_log(paste("GARCH", spec_name, "- Used rolling forecast with out.sample"))
@@ -509,7 +520,17 @@ fit_garch_models <- function(train, full, garch_specs) {
                     )
                   }
 
-                  predictions <- sigma_forecast^2
+                  # Adjust scale based on target type
+                  if (target_type == "rolling_std") {
+                    predictions <- sigma_forecast  # Standard deviation
+                  } else {
+                    # Adjust scale based on target type
+            if (target_type == "rolling_std") {
+              predictions <- sigma_forecast  # Standard deviation
+            } else {
+              predictions <- sigma_forecast^2  # Variance
+            }  # Variance
+                  }
                   debug_log(paste("GARCH", spec_name, "- Used static forecast (combined fit failed)"))
                 }
               },
@@ -527,7 +548,12 @@ fit_garch_models <- function(train, full, garch_specs) {
                   )
                 }
 
-                predictions <<- sigma_forecast^2
+                # Adjust scale based on target type
+                if (target_type == "rolling_std") {
+                  predictions <<- sigma_forecast  # Standard deviation
+                } else {
+                  predictions <<- sigma_forecast^2  # Variance
+                }
                 debug_log(paste("GARCH", spec_name, "- Used static forecast (error fallback)"))
               }
             )
@@ -543,7 +569,12 @@ fit_garch_models <- function(train, full, garch_specs) {
               )
             }
 
-            predictions <- sigma_forecast^2
+            # Adjust scale based on target type
+            if (target_type == "rolling_std") {
+              predictions <- sigma_forecast  # Standard deviation
+            } else {
+              predictions <- sigma_forecast^2  # Variance
+            }
             debug_log(paste("GARCH", spec_name, "- Used static forecasting (fallback)"))
           }
 
@@ -639,10 +670,11 @@ create_additional_garch_specs <- function() {
 # ============================================================================
 
 #' Prepare data for neural network models (like in thesis)
-#' @param returns Return series (not target volatility)
+#' @param returns Return series for features
+#' @param target_volatility Target volatility series for training
 #' @param lags Number of lags to use as features
 #' @return List with X (features) and y (targets)
-prepare_nn_data <- function(returns, lags = 20) {
+prepare_nn_data <- function(returns, target_volatility, lags = 20) {
   n <- length(returns)
   if (n <= lags) {
     stop("Insufficient data for specified lags")
@@ -653,17 +685,18 @@ prepare_nn_data <- function(returns, lags = 20) {
 
   for (i in 1:(n - lags)) {
     x_matrix[i, ] <- as.numeric(returns[i:(i + lags - 1)]^2)
-    y[i] <- as.numeric(returns[i + lags]^2)
+    y[i] <- as.numeric(target_volatility[i + lags])  # Use actual target volatility
   }
 
   return(list(X = x_matrix, y = y))
 }
 
 #' Prepare data for LSTM models (like in thesis)
-#' @param returns Return series (not target volatility)
+#' @param returns Return series for features
+#' @param target_volatility Target volatility series for training
 #' @param lags Number of lags to use as features
 #' @return List with X (3D array) and y (targets)
-prepare_lstm_data <- function(returns, lags = 20) {
+prepare_lstm_data <- function(returns, target_volatility, lags = 20) {
   n <- length(returns)
   if (n <= lags) {
     stop("Insufficient data for specified lags")
@@ -674,7 +707,7 @@ prepare_lstm_data <- function(returns, lags = 20) {
 
   for (i in 1:(n - lags)) {
     x_array[i, , 1] <- as.numeric(returns[i:(i + lags - 1)]^2)
-    y[i] <- as.numeric(returns[i + lags]^2)
+    y[i] <- as.numeric(target_volatility[i + lags])  # Use actual target volatility
   }
 
   return(list(X = x_array, y = y))
@@ -685,9 +718,10 @@ prepare_lstm_data <- function(returns, lags = 20) {
 #' @param full List with target and returns from full dataset
 #' @param architecture Vector specifying layer sizes
 #' @param lags Number of input lags
+#' @param target_type Type of target volatility ("squared", "rolling_std", "absolute")
 #' @return List with neural network predictions
 fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
-                               lags = 20) {
+                               lags = 20, target_type = "squared") {
   train_returns <- train$returns
   full_returns <- full$returns
   test_length <- length(full_returns) - length(train_returns)
@@ -716,8 +750,9 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
 # MLP MODEL
 # ============================================================================
 
-      # Prepare training data for MLP
-      train_data <- prepare_nn_data(train_returns, lags = lags)
+      # Prepare training data for MLP using actual target volatility
+      train_target <- train$target
+      train_data <- prepare_nn_data(train_returns, train_target, lags = lags)
       x_train <- train_data$X
       y_train <- train_data$y
 
@@ -775,8 +810,17 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
         }
       }
 
+      # Adjust MLP predictions scale based on target type
+      if (target_type == "rolling_std") {
+        # Predictions are already in std dev form, just ensure non-negative
+        mlp_forecasts_adjusted <- pmax(mlp_forecasts, 0)
+      } else {
+        # For variance targets, square the predictions
+        mlp_forecasts_adjusted <- mlp_forecasts^2  # Convert to variance
+      }
+
       results[["MLP_50_25_1"]] <- list(
-        predictions = mlp_forecasts,
+        predictions = mlp_forecasts_adjusted,
         parameters = list(
           architecture = architecture,
           lags = lags,
@@ -791,8 +835,8 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
 # LSTM MODEL
 # ============================================================================
 
-      # Prepare training data for LSTM
-      lstm_train_data <- prepare_lstm_data(train_returns, lags = lags)
+      # Prepare training data for LSTM using actual target volatility
+      lstm_train_data <- prepare_lstm_data(train_returns, train_target, lags = lags)
       x_train_lstm <- lstm_train_data$X
       y_train_lstm <- lstm_train_data$y
 
@@ -844,8 +888,17 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
         }
       }
 
+      # Adjust LSTM predictions scale based on target type
+      if (target_type == "rolling_std") {
+        # Predictions are already in std dev form, just ensure non-negative
+        lstm_forecasts_adjusted <- pmax(lstm_forecasts, 0)
+      } else {
+        # For variance targets, square the predictions
+        lstm_forecasts_adjusted <- lstm_forecasts^2  # Convert to variance
+      }
+
       results[["LSTM_50_25_1"]] <- list(
-        predictions = lstm_forecasts,
+        predictions = lstm_forecasts_adjusted,
         parameters = list(
           architecture = architecture,
           lags = lags,
@@ -1100,8 +1153,9 @@ fit_har_models <- function(train, full, extended = FALSE) {
 #' @param train List with target and returns from training period
 #' @param full List with target and returns from full dataset
 #' @param models List of models to fit
+#' @param target_type Type of target volatility measure
 #' @return List of all model results
-run_volatility_models <- function(train, full, models) {
+run_volatility_models <- function(train, full, models, target_type = "squared") {
   train_target <- train$target
   full_target <- full$target
   test_length <- length(full_target) - length(train_target)
@@ -1157,7 +1211,7 @@ run_volatility_models <- function(train, full, models) {
   # GARCH models
   if ("garch" %in% models$families && !is.null(models$garch_specs)) {
     debug_log("Fitting GARCH models...")
-    garch_results <- fit_garch_models(train, full, models$garch_specs)
+    garch_results <- fit_garch_models(train, full, models$garch_specs, target_type)
     debug_log(paste("GARCH models fitted:", length(garch_results)))
     all_results <- c(all_results, garch_results)
   }
@@ -1166,7 +1220,7 @@ run_volatility_models <- function(train, full, models) {
   if ("neural_network" %in% models$families) {
     debug_log("Fitting neural network models...")
     nn_results <- fit_neural_network(
-      train, full, models$nn_architecture, models$nn_lags
+      train, full, models$nn_architecture, models$nn_lags, target_type
     )
     debug_log(paste("NN models fitted:", length(nn_results)))
     all_results <- c(all_results, nn_results)

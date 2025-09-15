@@ -171,23 +171,29 @@ analysis_tab_ui <- function(id) {
           tabsetPanel(
             tabPanel(
               "Returns Time Series",
-              plotlyOutput(ns("returns_timeseries"), height = "400px")
+              div(style = "margin-top: 15px;",
+                plotlyOutput(ns("returns_timeseries"), height = "400px")
+              )
             ),
             tabPanel(
               "Volatility Evolution",
-              plotlyOutput(ns("volatility_timeseries"), height = "400px")
+              div(style = "margin-top: 15px;",
+                plotlyOutput(ns("volatility_timeseries"), height = "400px")
+              )
             ),
             tabPanel(
               "Rolling Statistics",
-              fluidRow(
-                column(
-                  6,
-                  numericInput(ns("rolling_window_viz"), "Rolling Window:",
-                    value = 30, min = 5, max = 252, step = 1
+              div(style = "margin-top: 15px;",
+                fluidRow(
+                  column(
+                    6,
+                    numericInput(ns("rolling_window_viz"), "Rolling Window:",
+                      value = 30, min = 5, max = 252, step = 1
+                    )
                   )
-                )
-              ),
-              plotlyOutput(ns("rolling_stats"), height = "400px")
+                ),
+                plotlyOutput(ns("rolling_stats"), height = "400px")
+              )
             )
           )
         )

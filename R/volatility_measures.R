@@ -3,12 +3,6 @@
 # Calculates different target volatility measures
 # ============================================================================
 
-#' Calculate absolute returns
-#' @param returns Vector of returns
-#' @return Vector of absolute returns
-calculate_absolute_returns <- function(returns) {
-  abs(returns)
-}
 
 #' Calculate squared returns
 #' @param returns Vector of returns
@@ -108,7 +102,7 @@ calculate_bipower_variation <- function(intraday_returns) {
 
 #' Main function to calculate target volatility measure
 #' @param returns Vector of returns
-#' @param measure_type Type of measure ("absolute", "squared", "rolling_std")
+#' @param measure_type Type of measure ("squared", "rolling_std")
 #' @param window Window size for rolling measures
 #' @param dates Optional dates vector
 #' @return List with volatility values and metadata
@@ -120,16 +114,6 @@ calculate_target_volatility <- function(returns, measure_type,
   }
 
   result <- switch(measure_type,
-    "absolute" = {
-      vol <- calculate_absolute_returns(returns)
-      list(
-        values = vol,
-        dates = dates,
-        name = "Absolute Returns |r_t|",
-        formula = "|r_t|",
-        description = "Absolute value of returns"
-      )
-    },
 
     "squared" = {
       vol <- calculate_squared_returns(returns)
@@ -198,12 +182,6 @@ annualize_volatility <- function(volatility, frequency = "daily") {
 #' @return List of available measures with descriptions
 get_available_measures <- function() {
   list(
-    "absolute" = list(
-      name = "Absolute Returns",
-      formula = "|r_t|",
-      description = "Absolute value of daily returns",
-      requires_window = FALSE
-    ),
     "squared" = list(
       name = "Squared Returns",
       formula = "r_t²",

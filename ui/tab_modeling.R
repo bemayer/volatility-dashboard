@@ -60,21 +60,8 @@ modeling_tab_ui <- function(id) {
               "min-height: 100px; border: 1px dashed #ddd;",
               "padding: 20px; border-radius: 5px;"
             ),
-            # Show message when no models exist
-            conditionalPanel(
-              condition = paste0("!output['", ns("has_models"), "']"),
-              div(
-                style = "text-align: center; color: #999;",
-                icon("cog", "fa-2x"), br(), br(),
-                "No models configured yet. Click 'Add Model' to get started."
-              )
-            ),
-
-            # Show model cards when models exist
-            conditionalPanel(
-              condition = paste0("output['", ns("has_models"), "']"),
-              uiOutput(ns("model_cards"))
-            )
+            # Combined UI output that handles both empty and populated states
+            uiOutput(ns("models_display"))
           ),
           br(),
 
@@ -338,6 +325,18 @@ modeling_tab_server <- function(input, output, session, values) {
     length(modeling_data$selected_models) > 0
   })
   outputOptions(output, "has_models", suspendWhenHidden = FALSE)
+
+  # Clear modeling results (not selected models) when processed_data changes
+  # This keeps user's model selection but clears results when data changes
+  observe({
+    values$processed_data # React to changes in processed_data
+
+    # Clear only model results, keep selected models
+    modeling_data$model_results <- NULL
+    modeling_data$performance_metrics <- NULL
+
+    # Don't clear selected_models to preserve user's choices
+  })
 
   # ====================================================================
   # MODEL CONFIGURATION - ADD MODEL MODAL
@@ -883,19 +882,30 @@ modeling_tab_server <- function(input, output, session, values) {
   # ====================================================================
 
   # Update models UI display
-  update_models_ui <- function() {
+  # Combined models display
+  output$models_display <- renderUI({
     models <- modeling_data$selected_models
 
-    output$model_cards <- renderUI({
-      if (length(models) > 0) {
-        lapply(names(models), function(model_id) {
-          model <- models[[model_id]]
-          model_card(model)
-        })
-      } else {
-        NULL
-      }
-    })
+    if (length(models) == 0) {
+      # No models message
+      div(
+        style = "text-align: center; color: #999;",
+        icon("cog", "fa-2x"), br(), br(),
+        "No models configured yet. Click 'Add Model' to get started."
+      )
+    } else {
+      # Model cards
+      lapply(names(models), function(model_id) {
+        model <- models[[model_id]]
+        model_card(model)
+      })
+    }
+  })
+
+  # Legacy function - no longer needed since renderUI is reactive
+  update_models_ui <- function() {
+    # renderUI will update automatically when modeling_data$selected_models changes
+    invisible()
   }
 
 
@@ -994,10 +1004,14 @@ modeling_tab_server <- function(input, output, session, values) {
           length(model_specs)
         ))
 
+        # Extract target type for GARCH scale adjustment
+        target_type <- processed_data$target_type %||% "squared"
+        debug_log(paste("Target type:", target_type))
+
         # Run models with unified interface
         debug_log("=== CALLING run_volatility_models ===")
         model_results <- run_volatility_models(
-          train_data, full_data, model_specs
+          train_data, full_data, model_specs, target_type
         )
         debug_log(paste(
           "Models executed, results count:",
@@ -1218,28 +1232,31 @@ modeling_tab_server <- function(input, output, session, values) {
         test_target <- values$processed_data$target_volatility$values[
           values$processed_data$test_indices
         ]
-        dm_results <- pairwise_dm_tests(
+        dm_results <- dm_tests_vs_benchmark(
           test_target,
-          modeling_data$model_results
+          modeling_data$model_results,
+          benchmark_name = "Previous_Value"
         )
 
         if (!is.null(dm_results)) {
           DT::datatable(
             dm_results,
             options = list(
-              pageLength = 10,
+              pageLength = 15,
               scrollX = TRUE,
               columnDefs = list(
-                list(className = "dt-center", targets = "_all")
+                list(className = "dt-center", targets = c(1, 2)), # p_value and Significance columns
+                list(className = "dt-left", targets = 0) # Model names column
               )
-            )
+            ),
+            rownames = FALSE
           ) %>%
             DT::formatRound(
-              columns = seq_len(ncol(dm_results)),
+              columns = "p_value",
               digits = 4
             ) %>%
             DT::formatStyle(
-              columns = seq_len(ncol(dm_results)),
+              columns = "p_value",
               backgroundColor = DT::styleInterval(
                 cuts = c(0.01, 0.05, 0.1),
                 values = c("#d4edda", "#fff3cd", "#ffeaa7", "#ffffff")

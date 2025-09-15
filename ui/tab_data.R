@@ -133,11 +133,10 @@ data_tab_ui <- function(id) {
               ns("target_measure"),
               "Select target volatility measure:",
               choices = list(
-                "Absolute Returns \\(|r_t|\\)" = "absolute",
                 "Squared Returns \\(r_t^2\\)" = "squared",
                 "Rolling Standard Deviation \\(\\sigma_t^2\\)" = "rolling_std"
               ),
-              selected = "squared"
+              selected = "rolling_std"
             ),
             conditionalPanel(
               condition = paste0(
@@ -268,17 +267,15 @@ data_tab_ui <- function(id) {
 
       <h5>Target Volatility Measures</h5>
       <ul>
-        <li><strong>Absolute Returns:</strong> \\(|r_t|\\) - Simple absolute value of returns (basic volatility proxy)</li>
         <li><strong>Squared Returns:</strong> \\(r_t^2\\) - Classical realized variance proxy (most common)</li>
-        <li><strong>Rolling RMS:</strong> \\(\\sqrt{\\frac{1}{n} \\sum_{i=1}^n r_i^2}\\) - Root Mean Square of returns over rolling window (alternative volatility estimator)</li>
         <li><strong>Rolling Standard Deviation:</strong> \\(\\sqrt{\\frac{1}{n-1} \\sum_{i=1}^n (r_i - \\bar{r})^2}\\) - Sample standard deviation (traditional volatility measure)</li>
       </ul>
 
       <h5>Key Differences</h5>
       <ul>
-        <li><strong>RMS vs Standard Deviation:</strong> RMS assumes zero mean (\\(\\bar{r} = 0\\)), while Standard Deviation subtracts the sample mean. For financial returns (often close to zero mean), RMS and Std Dev are very similar.</li>
-        <li><strong>Squared vs Absolute:</strong> Squared returns penalize large deviations more heavily, while absolute returns treat all deviations equally.</li>
-        <li><strong>Rolling vs Fixed:</strong> Rolling measures use a moving window, providing time-varying volatility estimates.</li>
+        <li><strong>Squared Returns:</strong> Represent realized variance, suitable for GARCH modeling and theoretical applications</li>
+        <li><strong>Rolling Standard Deviation:</strong> Provides time-varying volatility estimates with adjustable smoothing window</li>
+        <li><strong>Scale Consideration:</strong> Squared returns are in variance units (σ²), while rolling std is in volatility units (σ)</li>
       </ul>
 
       <h5>Data Requirements</h5>
@@ -370,9 +367,15 @@ data_tab_server <- function(input, output, session, values) {
         local_data$symbol <- symbol
         local_data$data_source <- "Yahoo Finance"
 
-        # Update values for other modules
+        # Update values for other modules and reset all computed data
         debug_log("Updating values$raw_data for other modules...")
         values$raw_data <- processed_data
+
+        # Clear all computed data when new raw data is loaded
+        values$processed_data <- NULL
+        values$target_volatility <- NULL
+        values$model_results <- NULL
+        values$selected_models <- list()
 
         debug_log("Removing modal and showing success notification...")
         removeModal()
@@ -452,8 +455,14 @@ data_tab_server <- function(input, output, session, values) {
         local_data$symbol <- "CSV Data"
         local_data$data_source <- "CSV Upload"
 
-        # Update values for other modules
+        # Update values for other modules and reset all computed data
         values$raw_data <- processed_data
+
+        # Clear all computed data when new raw data is loaded
+        values$processed_data <- NULL
+        values$target_volatility <- NULL
+        values$model_results <- NULL
+        values$selected_models <- list()
 
         removeModal()
         safe_notification(
@@ -510,6 +519,7 @@ data_tab_server <- function(input, output, session, values) {
         # Store processed data
         values$processed_data <- list(
           target_volatility = target_vol,
+          target_type = input$target_measure,  # Store the target type
           returns = local_data$raw_data$returns,
           dates = local_data$raw_data$return_dates,
           train_indices = train_indices,
@@ -521,6 +531,10 @@ data_tab_server <- function(input, output, session, values) {
             train_ratio = input$train_ratio
           )
         )
+
+        # Clear model results when data configuration changes
+        values$model_results <- NULL
+        values$selected_models <- list()
 
         debug_log("Split applied successfully")
       },

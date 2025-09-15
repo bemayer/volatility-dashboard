@@ -286,6 +286,68 @@ pairwise_dm_tests <- function(actual, model_results, alpha = 0.05) {
   return(p_value_matrix)
 }
 
+#' Perform Diebold-Mariano tests against Previous Value benchmark
+#' @param actual Vector of actual values
+#' @param model_results List of model results
+#' @param benchmark_name Name of benchmark model (default "Previous_Value")
+#' @param alpha Significance level
+#' @return Data frame with models and their p-values vs benchmark
+dm_tests_vs_benchmark <- function(actual, model_results, benchmark_name = "Previous_Value", alpha = 0.05) {
+  model_names <- names(model_results)
+
+  # Check if benchmark exists
+  if (!benchmark_name %in% model_names) {
+    return(data.frame(
+      Message = paste("Benchmark model", benchmark_name, "not found in results")
+    ))
+  }
+
+  # Calculate benchmark errors
+  benchmark_predicted <- model_results[[benchmark_name]]$predictions
+  benchmark_errors <- actual - benchmark_predicted
+
+  # Initialize results
+  results <- data.frame(
+    Model = character(),
+    p_value = numeric(),
+    Significance = character(),
+    stringsAsFactors = FALSE
+  )
+
+  # Test each model against benchmark
+  for (model_name in model_names) {
+    if (model_name != benchmark_name) {
+      predicted <- model_results[[model_name]]$predictions
+      model_errors <- actual - predicted
+
+      dm_result <- diebold_mariano_test(model_errors, benchmark_errors)
+
+      # Determine significance level
+      significance <- if (dm_result$p_value < 0.01) {
+        "***"
+      } else if (dm_result$p_value < 0.05) {
+        "**"
+      } else if (dm_result$p_value < 0.10) {
+        "*"
+      } else {
+        ""
+      }
+
+      results <- rbind(results, data.frame(
+        Model = model_name,
+        p_value = dm_result$p_value,
+        Significance = significance,
+        stringsAsFactors = FALSE
+      ))
+    }
+  }
+
+  # Sort by p-value (most significant first)
+  results <- results[order(results$p_value), ]
+
+  return(results)
+}
+
 #' Format metrics for display
 #' @param metrics_df Data frame of metrics
 #' @param digits Number of digits for rounding
