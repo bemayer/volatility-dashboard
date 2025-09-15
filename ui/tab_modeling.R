@@ -1,5 +1,5 @@
 # ============================================================================
-# VOLATILITY MODELING TAB  -  UI AND SERVER
+# VOLATILITY MODELING TAB - UI AND SERVER
 # Dynamic model configuration and results analysis
 # ============================================================================
 
@@ -60,15 +60,21 @@ modeling_tab_ui <- function(id) {
               "min-height: 100px; border: 1px dashed #ddd;",
               "padding: 20px; border-radius: 5px;"
             ),
-            div(
-              id = ns("no_models_message"),
-              style = "text-align: center; color: #999;",
-              icon("cog", "fa-2x"), br(), br(),
-              "No models configured yet. Click 'Add Model' to get started."
+            # Show message when no models exist
+            conditionalPanel(
+              condition = paste0("!output['", ns("has_models"), "']"),
+              div(
+                style = "text-align: center; color: #999;",
+                icon("cog", "fa-2x"), br(), br(),
+                "No models configured yet. Click 'Add Model' to get started."
+              )
             ),
 
-            # Model cards display
-            uiOutput(ns("model_cards"))
+            # Show model cards when models exist
+            conditionalPanel(
+              condition = paste0("output['", ns("has_models"), "']"),
+              uiOutput(ns("model_cards"))
+            )
           ),
           br(),
 
@@ -76,12 +82,22 @@ modeling_tab_ui <- function(id) {
           fluidRow(
             column(
               6,
-              actionButton(
-                ns("add_model"),
-                "Add New Model",
-                class = "btn-success",
-                icon = icon("plus"),
-                style = "width: 100%;"
+              div(
+                style = "display: flex; gap: 10px;",
+                actionButton(
+                  ns("add_model"),
+                  "Add New Model",
+                  class = "btn-success",
+                  icon = icon("plus"),
+                  style = "flex: 1;"
+                ),
+                actionButton(
+                  ns("clear_models"),
+                  "Clear All",
+                  class = "btn-outline-danger",
+                  icon = icon("trash"),
+                  style = "flex: 1;"
+                )
               )
             ),
             column(
@@ -109,7 +125,7 @@ modeling_tab_ui <- function(id) {
             class = "btn-outline-info",
             style = "width: 100%; margin: 2px;"
           ),
-          tags$small("Naive   +  MA   +  EWMA"),
+          tags$small("Naive + MA + EWMA"),
           br(), br(),
           actionButton(
             ns("preset_garch"), "GARCH Suite",
@@ -209,22 +225,6 @@ modeling_tab_ui <- function(id) {
                   ns("viz_model"),
                   "Select model to visualize:",
                   choices = NULL
-                )
-              ),
-              column(
-                4,
-                checkboxInput(
-                  ns("show_all_forecasts"),
-                  "Show all model forecasts",
-                  value = FALSE
-                )
-              ),
-              column(
-                4,
-                checkboxInput(
-                  ns("annualize_viz"),
-                  "Annualize volatility",
-                  value = TRUE
                 )
               )
             ),
@@ -334,8 +334,13 @@ modeling_tab_server <- function(input, output, session, values) {
   })
   outputOptions(output, "results_available", suspendWhenHidden = FALSE)
 
+  output$has_models <- reactive({
+    length(modeling_data$selected_models) > 0
+  })
+  outputOptions(output, "has_models", suspendWhenHidden = FALSE)
+
   # ====================================================================
-  # MODEL CONFIGURATION  -  ADD MODEL MODAL
+  # MODEL CONFIGURATION - ADD MODEL MODAL
   # ====================================================================
 
   observeEvent(input$add_model, {
@@ -456,7 +461,7 @@ modeling_tab_server <- function(input, output, session, values) {
               choices = list(
                 "Standard GARCH" = "sGARCH",
                 "EGARCH" = "eGARCH",
-                "GJR - GARCH" = "gjrGARCH",
+                "GJR-GARCH" = "gjrGARCH",
                 "FIGARCH" = "fiGARCH"
               ),
               selected = "sGARCH"
@@ -468,7 +473,7 @@ modeling_tab_server <- function(input, output, session, values) {
               ns("garch_distribution"), "Distribution:",
               choices = list(
                 "Normal" = "norm",
-                "Student - t" = "std",
+                "Student-t" = "std",
                 "Skewed Normal" = "snorm",
                 "Skewed t" = "sstd",
                 "GED" = "ged"
@@ -500,7 +505,7 @@ modeling_tab_server <- function(input, output, session, values) {
         selectInput(
           ns("nn_type"), "Network Type:",
           choices = list(
-            "Multi - Layer Perceptron" = "mlp",
+            "Multi-Layer Perceptron" = "mlp",
             "LSTM" = "lstm"
           ),
           selected = "mlp"
@@ -646,7 +651,7 @@ modeling_tab_server <- function(input, output, session, values) {
         include_mean = input$garch_mean %||% TRUE,
         name = input$modal_model_name %||% paste0(
           input$garch_type %||% "sGARCH", "(",
-          input$garch_p %||% 1, ",", input$garch_q %||% 1, ") - ",
+          input$garch_p %||% 1, ",", input$garch_q %||% 1, ")-",
           input$garch_distribution %||% "norm"
         )
       ),
@@ -703,8 +708,8 @@ modeling_tab_server <- function(input, output, session, values) {
 
     # Add unique ID
     model_config$id <- paste0(
-      "model_", length(modeling_data$selected_models) + 1, "_",
-      gsub("[ ^ A - Za - z0 - 9]", "_", Sys.time())
+      "model_", length(modeling_data$selected_models)+1, "_",
+      gsub("[^A-Za-z0-9]", "_", Sys.time())
     )
 
     # Add to selected models
@@ -763,7 +768,7 @@ modeling_tab_server <- function(input, output, session, values) {
       new_models <- lapply(distributions, function(dist) {
         list(
           family = "garch", type = "sGARCH", distribution = dist,
-          p = 1, q = 1, name = paste0("GARCH(1,1) - ", dist)
+          p = 1, q = 1, name = paste0("GARCH(1,1)-", dist)
         )
       })
     } else if (preset_type == "advanced") {
@@ -772,46 +777,83 @@ modeling_tab_server <- function(input, output, session, values) {
           family = "neural_network", type = "mlp",
           architecture = c(50, 25), name = "MLP(50-25-1)"
         ),
-        list(family = "har", extended = FALSE, name = "HAR - RV"),
+        list(family = "har", extended = FALSE, name = "HAR-RV"),
         list(
           family = "garch", type = "eGARCH", distribution = "std",
-          p = 1, q = 1, name = "EGARCH(1,1) - std"
+          p = 1, q = 1, name = "EGARCH(1,1)-std"
         )
       )
     } else if (preset_type == "thesis") {
-      # Comprehensive model set from thesis
+      # Comprehensive model set from thesis (like in your thesis)
       new_models <- list(
         # Naive
         list(
           family = "naive", type = "historical",
           name = "Historical Average"
         ),
-        # EWMA
-        list(family = "ewma", optimize = TRUE, name = "EWMA Optimized"),
-        # MA Adaptive
+        list(
+          family = "naive", type = "random_walk",
+          name = "Previous Value"
+        ),
+        # MA with multiple windows (like in thesis: 7, 14, 20, 30, 60)
+        list(family = "moving_average", window = 7, name = "MA(7)"),
+        list(family = "moving_average", window = 14, name = "MA(14)"),
+        list(family = "moving_average", window = 20, name = "MA(20)"),
+        list(family = "moving_average", window = 30, name = "MA(30)"),
+        list(family = "moving_average", window = 60, name = "MA(60)"),
         list(
           family = "moving_average", adaptive = TRUE,
           name = "MA Adaptive"
         ),
-        # GARCH suite
+        # EWMA
+        list(family = "ewma", optimize = TRUE, name = "EWMA Optimized"),
+        # GARCH suite - Standard
         list(
           family = "garch", type = "sGARCH", distribution = "norm",
-          p = 1, q = 1, name = "GARCH(1,1) - norm"
+          p = 1, q = 1, name = "GARCH(1,1)-norm"
         ),
         list(
           family = "garch", type = "sGARCH", distribution = "std",
-          p = 1, q = 1, name = "GARCH(1,1) - std"
+          p = 1, q = 1, name = "GARCH(1,1)-std"
+        ),
+        # EGARCH - asymmetric GARCH
+        list(
+          family = "garch", type = "eGARCH", distribution = "norm",
+          p = 1, q = 1, name = "EGARCH(1,1)-norm"
         ),
         list(
           family = "garch", type = "eGARCH", distribution = "std",
-          p = 1, q = 1, name = "EGARCH(1,1) - std"
+          p = 1, q = 1, name = "EGARCH(1,1)-std"
         ),
-        # HAR
-        list(family = "har", extended = FALSE, name = "HAR - RV"),
-        # Neural Network
+        # GJR-GARCH - asymmetric GARCH
+        list(
+          family = "garch", type = "gjrGARCH", distribution = "norm",
+          p = 1, q = 1, name = "GJR-GARCH(1,1)-norm"
+        ),
+        list(
+          family = "garch", type = "gjrGARCH", distribution = "std",
+          p = 1, q = 1, name = "GJR-GARCH(1,1)-std"
+        ),
+        # FIGARCH - long memory
+        list(
+          family = "garch", type = "fiGARCH", distribution = "norm",
+          p = 1, q = 1, name = "FIGARCH(1,1)-norm"
+        ),
+        list(
+          family = "garch", type = "fiGARCH", distribution = "std",
+          p = 1, q = 1, name = "FIGARCH(1,1)-std"
+        ),
+        # HAR - both standard and extended
+        list(family = "har", extended = FALSE, name = "HAR-RV"),
+        list(family = "har", extended = TRUE, name = "HAR-RV Extended"),
+        # Neural Networks
         list(
           family = "neural_network", type = "mlp",
-          architecture = c(50, 25), name = "MLP(50-25-1)"
+          architecture = c(50, 25), lags = 20, name = "MLP(50-25-1)"
+        ),
+        list(
+          family = "neural_network", type = "lstm",
+          architecture = c(50, 25), lags = 20, name = "LSTM(50-25-1)"
         )
       )
     }
@@ -821,7 +863,7 @@ modeling_tab_server <- function(input, output, session, values) {
       model_config <- new_models[[i]]
       model_config$id <- paste0(
         "preset_", preset_type, "_", i, "_",
-        gsub("[ ^ A - Za - z0 - 9]", "_", Sys.time())
+        gsub("[^A-Za-z0-9]", "_", Sys.time())
       )
       modeling_data$selected_models[[model_config$id]] <- model_config
     }
@@ -844,36 +886,18 @@ modeling_tab_server <- function(input, output, session, values) {
   update_models_ui <- function() {
     models <- modeling_data$selected_models
 
-    if (length(models) == 0) {
-      # Show no models message
-      shinyjs::show("no_models_message")
-      output$model_cards <- renderUI(NULL)
-    } else {
-      # Hide no models message
-      shinyjs::hide("no_models_message")
-
-      # Create model cards
-      cards <- lapply(names(models), function(model_id) {
-        model <- models[[model_id]]
-
-        # Create parameter summary
-        params <- model[!names(model) %in% c("id", "name", "family")]
-
-        model_card(
-          model$name,
-          stringr::str_to_title(gsub("_", " ", model$family)),
-          params,
-          get_model_description(model),
-          actions = TRUE
-        )
-      })
-
-      # Clear existing cards and render new ones
-      output$model_cards <- renderUI({
-        div(cards)
-      })
-    }
+    output$model_cards <- renderUI({
+      if (length(models) > 0) {
+        lapply(names(models), function(model_id) {
+          model <- models[[model_id]]
+          model_card(model)
+        })
+      } else {
+        NULL
+      }
+    })
   }
+
 
   # Get model description
   get_model_description <- function(model) {
@@ -983,7 +1007,7 @@ modeling_tab_server <- function(input, output, session, values) {
         # Evaluate performance
         debug_log("Evaluating model performance...")
         test_target <- full_data$target[
-          (length(train_data$target) + 1):length(full_data$target)
+          (length(train_data$target)+1):length(full_data$target)
         ]
         performance_metrics <- evaluate_all_models(test_target, model_results)
         debug_log("Performance evaluation completed")
@@ -1185,7 +1209,7 @@ modeling_tab_server <- function(input, output, session, values) {
     p
   })
 
-  # Diebold - Mariano tests
+  # Diebold-Mariano tests
   output$dm_tests <- DT::renderDataTable({
     req(modeling_data$model_results, values$processed_data)
 
@@ -1259,16 +1283,6 @@ modeling_tab_server <- function(input, output, session, values) {
       "all_target range:", min(all_target, na.rm = TRUE),
       "to", max(all_target, na.rm = TRUE)
     ))
-    debug_log(paste("Annualize checkbox:", input$annualize_viz))
-
-    # Apply annualization if requested
-    if (input$annualize_viz) {
-      plot_data$Actual <- annualize_volatility(plot_data$Actual, "daily")
-      debug_log(paste(
-        "After annualization:", min(plot_data$Actual, na.rm = TRUE),
-        "to", max(plot_data$Actual, na.rm = TRUE)
-      ))
-    }
 
     p <- plot_ly() %>%
       add_trace(
@@ -1284,42 +1298,7 @@ modeling_tab_server <- function(input, output, session, values) {
     # Add model forecasts (on test period only)
     test_dates <- values$processed_data$dates[values$processed_data$test_indices]
 
-    if (input$show_all_forecasts) {
-      # Show all models on full period
-      colors <- viridis::viridis(length(modeling_data$model_results))
-
-      for (i in seq_along(modeling_data$model_results)) {
-        model_name <- names(modeling_data$model_results)[i]
-        predictions <- modeling_data$model_results[[model_name]]$predictions
-
-        debug_log(paste("*** FORECAST VISUALIZATION DEBUG ***"))
-        debug_log(paste("Model:", model_name))
-        debug_log(paste("Predictions length:", length(predictions)))
-        debug_log(paste("Test dates length:", length(test_dates)))
-        debug_log(paste(
-          "Original predictions range:",
-          min(predictions, na.rm = TRUE),
-          "to", max(predictions, na.rm = TRUE)
-        ))
-        debug_log(paste("Annualize checkbox:", input$annualize_viz))
-
-        if (input$annualize_viz) {
-          predictions <- annualize_volatility(predictions, "daily")
-          debug_log(paste(
-            "After annualization:",
-            min(predictions, na.rm = TRUE),
-            "to", max(predictions, na.rm = TRUE)
-          ))
-        }
-
-        p <- p %>% add_trace(
-          x = model_dates, y = predictions,
-          type = "scatter", mode = "lines",
-          name = model_name,
-          line = list(color = colors[i], width = 1, dash = "dot")
-        )
-      }
-    } else if (!is.null(input$viz_model) && input$viz_model != "") {
+    if (!is.null(input$viz_model) && input$viz_model != "") {
       # Show selected model on full period
       selected_predictions <- modeling_data$model_results[[
         input$viz_model
@@ -1334,17 +1313,16 @@ modeling_tab_server <- function(input, output, session, values) {
         min(selected_predictions, na.rm = TRUE),
         "to", max(selected_predictions, na.rm = TRUE)
       ))
-      debug_log(paste("Annualize checkbox:", input$annualize_viz))
-
-      if (input$annualize_viz) {
-        selected_predictions <- annualize_volatility(
-          selected_predictions, "daily"
-        )
-        debug_log(paste(
-          "After annualization:",
-          min(selected_predictions, na.rm = TRUE),
-          "to", max(selected_predictions, na.rm = TRUE)
-        ))
+      # Ensure data lengths match
+      if (length(selected_predictions) != length(test_dates)) {
+        debug_log(paste("Length mismatch! Predictions:", length(selected_predictions),
+                       "Dates:", length(test_dates)), "WARNING")
+        # Use the shorter length to avoid errors
+        min_length <- min(length(selected_predictions), length(test_dates))
+        selected_predictions <- selected_predictions[1:min_length]
+        selected_dates <- test_dates[1:min_length]
+      } else {
+        selected_dates <- test_dates
       }
 
       p <- p %>% add_trace(
@@ -1359,13 +1337,7 @@ modeling_tab_server <- function(input, output, session, values) {
     p <- p %>% layout(
       title = "Volatility Forecast vs Actual",
       xaxis = list(title = "Date"),
-      yaxis = list(
-        title = if (input$annualize_viz) {
-          "Annualized Volatility"
-        } else {
-          "Volatility"
-        }
-      ),
+      yaxis = list(title = "Volatility"),
       hovermode = "x unified",
       legend = list(x = 0.02, y = 0.98),
       shapes = list(
@@ -1393,68 +1365,114 @@ modeling_tab_server <- function(input, output, session, values) {
     p
   })
 
-  # ====================================================================
-  # DYNAMIC REMOVE BUTTON HANDLERS
-  # ====================================================================
+  # # ====================================================================
+  # # CLEAR ALL MODEL HANDLER
+  # # ====================================================================
+  observeEvent(input$clear_models, {
+    modeling_data$selected_models <- list()
+    update_models_ui()
+    safe_notification(
+      "All models have been cleared",
+      type = "message"
+    )
+  }, ignoreInit = TRUE)
+#   observe({
+#   models <- modeling_data$selected_models
+#   debug_log(paste("*** OBSERVE TRIGGERED - Models count:", length(models)))
 
-  # Handle all remove button clicks dynamically
-  observeEvent(input,
-    {
-      # Get all input names that start with "remove_"
-      remove_inputs <- names(input)[startsWith(names(input), "remove_")]
+#   lapply(names(models), function(model_id) {
+#     btn_id <- paste0("remove_", gsub("[^A-Za-z0-9]", "_", modeling_data$selected_models[[model_id]]$name))
+#     debug_log(paste("Setting up observer for button:", btn_id, "model_id:", model_id))
 
-      for (remove_id in remove_inputs) {
-        # Check if this button was clicked
-        if (!is.null(input[[remove_id]]) && input[[remove_id]] > 0) {
-          # Extract model name from button ID
-          model_name <- gsub(" ^ remove_", "", remove_id)
-          model_name <- gsub("_", " ", model_name) # Convert underscores back
 
-          debug_log(paste("Remove button clicked for model:", model_name))
+#     debug_log(paste("Current input value for", btn_id, ":", input[[btn_id]]))
+#     debug_log(input)
 
-          # Find and remove the model
-          current_models <- modeling_data$selected_models
-          model_to_remove <- NULL
+#     observeEvent(input[[btn_id]], {
+#       debug_log(paste("Clicked remove button for model_id:", model_id, "btn_id:", btn_id))
+#       modeling_data$selected_models[[model_id]] <- NULL
+#       debug_log(paste("Model removed. Remaining models:", length(modeling_data$selected_models)))
+#     }, ignoreInit = TRUE, once = TRUE)
+#   })
+# })
+# observe({
+#   btn_ids <- sapply(modeling_data$selected_models, function(m) paste0("remove_", gsub("[^A-Za-z0-9]", "_", m$name)))
+#   if (length(btn_ids) == 0) {
+#     return()
+#   }
+#   debug_log(input)
+#   debug_log(input[[btn_ids[1]]])
+#   clicked <- btn_ids[sapply(btn_ids, function(id) !is.null(input[[id]]) && input[[id]] > 0)]
+#   debug_log(paste("*** OBSERVE TRIGGERED - Models count:", length(modeling_data$selected_models), "Clicked buttons:", paste(clicked, collapse = ", ")))
+#   if (length(clicked) > 0) {
+#     # Suppose qu'un seul bouton est cliqué à la fois
+#     btn_id <- clicked[1]
+#     model_id <- names(modeling_data$selected_models)[which(btn_ids == btn_id)]
+#     debug_log(paste("Clicked remove button for model_id:", model_id, "btn_id:", btn_id))
+#     modeling_data$selected_models[[model_id]] <- NULL
+#     update_models_ui()
+#   }
+# })
 
-          # Find the model by name
-          for (model_id in names(current_models)) {
-            if (gsub("[^A-Za-z0-9]", "_", current_models[[model_id]]$name)
-            == gsub("[^A-Za-z0-9]", "_", model_name)) {
-              model_to_remove <- model_id
-              break
-            }
-          }
+  # # Store observers for remove buttons to avoid duplicates
+  # remove_observers <- reactiveValues()
 
-          if (!is.null(model_to_remove)) {
-            debug_log(paste("Removing model with ID:", model_to_remove))
+  # # Handle remove button clicks by creating individual observers
+  # observe({
+  #   debug_log(paste("*** OBSERVE TRIGGERED - Models count:", length(modeling_data$selected_models)))
 
-            # Remove the model from the list
-            modeling_data$selected_models[[model_to_remove]] <- NULL
+  #   if (length(modeling_data$selected_models) > 0) {
+  #     debug_log("*** MODELS AVAILABLE, creating observers...")
 
-            # Update the UI
-            update_models_ui()
+  #     for (model_id in names(modeling_data$selected_models)) {
+  #       model_name <- modeling_data$selected_models[[model_id]]$name
+  #       base_button_id <- paste0("remove_", gsub("[^A-Za-z0-9]", "_", model_name))
 
-            # Show success notification
-            safe_notification(
-              paste(
-                "Removed model:",
-                current_models[[model_to_remove]]$name %||% model_name
-              ),
-              type = "message"
-            )
+  #       debug_log(paste("*** Checking model:", model_name, "-> base_button_id:", base_button_id))
 
-            debug_log(paste(
-              "Model removed successfully. Remaining models:",
-              length(modeling_data$selected_models)
-            ))
-          } else {
-            debug_log(paste(
-              "Could not find model to remove:", model_name
-            ), "WARNING")
-          }
-        }
-      }
-    },
-    ignoreInit = TRUE
-  )
+  #       # Create observer only if it doesn't exist yet
+  #       if (is.null(remove_observers[[base_button_id]])) {
+  #         debug_log(paste("*** Creating observer for button:", base_button_id))
+
+  #         # Create a local copy of variables for the closure
+  #         local_model_id <- model_id
+  #         local_base_button_id <- base_button_id
+  #         local_model_name <- model_name
+
+  #         # The button has a namespace, so we reference it without namespace in observeEvent
+  #         remove_observers[[base_button_id]] <- observeEvent(input[[local_base_button_id]], {
+  #           debug_log(paste("*** REMOVE BUTTON CLICKED for model:", local_model_name))
+
+  #           if (!is.null(input[[local_base_button_id]]) && input[[local_base_button_id]] > 0) {
+  #             debug_log(paste("*** Removing model with ID:", local_model_id))
+
+  #             # Remove the model from the list
+  #             modeling_data$selected_models[[local_model_id]] <- NULL
+
+  #             # Remove the observer
+  #             remove_observers[[local_base_button_id]] <- NULL
+
+  #             # Update the UI
+  #             update_models_ui()
+
+  #             # Show success notification
+  #             safe_notification(
+  #               paste("Removed model:", local_model_name),
+  #               type = "message"
+  #             )
+
+  #             debug_log(paste(
+  #               "*** Model removed successfully. Remaining models:",
+  #               length(modeling_data$selected_models)
+  #             ))
+  #           }
+  #         }, ignoreInit = TRUE)
+  #       } else {
+  #         debug_log(paste("*** Observer already exists for button:", base_button_id))
+  #       }
+  #     }
+  #   } else {
+  #     debug_log("*** No models available")
+  #   }
+  # })
 }

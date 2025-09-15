@@ -76,8 +76,10 @@ formula_box <- function(title, formula, description = NULL) {
       style = "text-align: center; padding: 20px;",
       h4(style = "margin-bottom: 20px;", title),
       div(
-        style = paste("background: #f8f9fa; padding: 15px;",
-                      "border-radius: 5px; margin: 10px 0;"),
+        style = paste(
+          "background: #f8f9fa; padding: 15px;",
+          "border-radius: 5px; margin: 10px 0;"
+        ),
         withMathJax(paste0("$$", formula, "$$"))
       ),
       if (!is.null(description)) {
@@ -88,54 +90,45 @@ formula_box <- function(title, formula, description = NULL) {
 }
 
 #' Create a model card for displaying model information
-#' @param model_name Name of the model
-#' @param model_type Type/category of the model
-#' @param parameters Model parameters
-#' @param description Model description
-#' @param actions Action buttons (Edit, Remove)
+#' @param model List with model information (id, name, family, parameters)
+#' @param btn_id ID for the remove button
 #' @return Shiny div with model card
-model_card <- function(model_name, model_type, parameters = NULL,
-                       description = NULL, actions = TRUE) {
-
-  param_text <- if (!is.null(parameters)) {
-    param_names <- names(parameters)
-    param_values <- sapply(parameters, function(x) {
-      if (is.numeric(x)) round(x, 4) else as.character(x)
-    })
-    paste(param_names, "=", param_values, collapse = ", ")
+model_card <- function(model) {
+  params <- model[!names(model) %in% c("id", "name", "family")]
+  param_text <- if (length(params) > 0) {
+    paste(names(params), "=", sapply(params, as.character), collapse = ", ")
   } else {
     ""
   }
 
+  model_name <- model$name
+  model_type <- stringr::str_to_title(gsub("_", " ", model$family))
+  description <- if (!is.null(model$description)) model$description else NULL
+
   div(
     class = "model-card",
     fluidRow(
-      column(8,
+      column(
+        8,
         h5(style = "margin: 0; color: #2c3e50;", model_name),
         p(style = "margin: 5px 0; color: #7f8c8d;", model_type),
         if (!is.null(description)) {
-          p(style = "margin: 5px 0; font-size: 12px; color: #95a5a6;",
-            description)
+          p(style = "margin: 5px 0; font-size: 12px; color: #95a5a6;", description)
         },
         if (param_text != "") {
-          p(style = paste("margin: 5px 0; font-size: 11px;",
-                          "font-family: monospace; color: #34495e;"),
-            param_text)
-        }
-      ),
-      if (actions) {
-        column(4, style = "text-align: right;",
-          actionButton(
-            paste0("remove_", gsub("[^A-Za-z0-9]", "_", model_name)),
-            "Remove",
-            size = "xs",
-            class = "btn-outline-danger"
+          p(
+            style = paste(
+              "margin: 5px 0; font-size: 11px;",
+              "font-family: monospace; color: #34495e;"
+            ),
+            param_text
           )
-        )
-      }
+        }
+      )
     )
   )
 }
+
 
 #' Create sortable table header
 #' @param column_name Column name
@@ -145,7 +138,6 @@ model_card <- function(model_name, model_type, parameters = NULL,
 #' @return Shiny span with sortable header
 sortable_header <- function(column_name, display_name,
                             current_sort = NULL, sort_direction = "asc") {
-
   arrow <- if (!is.null(current_sort) && current_sort == column_name) {
     if (sort_direction == "asc") "↑" else "↓"
   } else {
@@ -179,7 +171,6 @@ create_parameter_input <- function(param_name, param_type, default_value = NULL,
       max = max,
       step = if (is.null(min) || is.null(max)) 0.01 else (max - min) / 100
     ),
-
     "integer" = numericInput(
       input_id,
       param_name,
@@ -188,20 +179,17 @@ create_parameter_input <- function(param_name, param_type, default_value = NULL,
       max = max,
       step = 1
     ),
-
     "choice" = selectInput(
       input_id,
       param_name,
       choices = choices,
       selected = default_value
     ),
-
     "logical" = checkboxInput(
       input_id,
       param_name,
       value = default_value %||% FALSE
     ),
-
     "text" = textInput(
       input_id,
       param_name,
@@ -323,8 +311,10 @@ create_data_summary_table <- function(data_summary) {
   }
 
   summary_df <- data.frame(
-    Statistic = c("Observations", "Mean", "Std Dev", "Minimum", "Maximum",
-                  "Skewness", "Kurtosis", "Missing Values"),
+    Statistic = c(
+      "Observations", "Mean", "Std Dev", "Minimum", "Maximum",
+      "Skewness", "Kurtosis", "Missing Values"
+    ),
     Value = c(
       data_summary$n_obs %||% "N/A",
       round(data_summary$mean %||% 0, 6),
@@ -388,13 +378,15 @@ validate_model_parameters <- function(params, model_type) {
     if (!is.null(params$layers)) {
       for (i in seq_along(params$layers)) {
         if (params$layers[i] < 1 || params$layers[i] > 1000) {
-          errors <- c(errors,
-                      paste("Layer", i, "size must be between 1 and 1000"))
+          errors <- c(
+            errors,
+            paste("Layer", i, "size must be between 1 and 1000")
+          )
         }
       }
     }
     if (!is.null(params$learning_rate) &&
-          (params$learning_rate <= 0 || params$learning_rate > 1)) {
+      (params$learning_rate <= 0 || params$learning_rate > 1)) {
       errors <- c(errors, "Learning rate must be between 0 and 1")
     }
   }

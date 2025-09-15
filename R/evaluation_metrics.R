@@ -81,7 +81,7 @@ calculate_mape <- function(actual, predicted) {
   mean(abs((actual_clean - predicted_clean) / actual_clean)) * 100
 }
 
-#' Calculate Quasi - Maximum Likelihood Error (QLIKE)
+#' Calculate Quasi-Maximum Likelihood Error (QLIKE)
 #' @param actual Vector of actual values
 #' @param predicted Vector of predicted values
 #' @return QLIKE value
@@ -194,7 +194,7 @@ evaluate_all_models <- function(actual, model_results) {
   results_df
 }
 
-#' Diebold - Mariano test for forecast accuracy comparison
+#' Diebold-Mariano test for forecast accuracy comparison
 #' @param errors1 Forecast errors from model 1
 #' @param errors2 Forecast errors from model 2
 #' @param alternative Alternative hypothesis ("two.sided", "less", "greater")

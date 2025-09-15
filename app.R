@@ -1,5 +1,5 @@
 # ============================================================================
-# PROFESSIONAL VOLATILITY MODELING DASHBOARD
+# VOLATILITY MODELING DASHBOARD
 # A comprehensive toolkit for financial time series volatility analysis
 # ============================================================================
 
