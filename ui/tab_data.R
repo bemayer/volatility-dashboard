@@ -641,8 +641,7 @@ data_tab_server <- function(input, output, session, values) {
   # Reactive values for preview pagination
   preview_state <- reactiveValues(
     current_page = 1,
-    total_pages = 1,
-    total_rows = 0,
+    loaded_rows = 0,
     page_size = 1000,
     data = NULL,
     currency = NULL
@@ -674,16 +673,14 @@ data_tab_server <- function(input, output, session, values) {
       )
 
       # Extract metadata
-      total_rows <- attr(preview_data, "total_rows")
+      loaded_rows <- attr(preview_data, "loaded_rows")
       start_row <- attr(preview_data, "start_row")
       end_row <- attr(preview_data, "end_row")
+      returned_rows <- attr(preview_data, "returned_rows")
 
       # Update state
       preview_state$current_page <- page_num
-      preview_state$total_rows <- total_rows
-      preview_state$total_pages <- ceiling(
-        total_rows / preview_state$page_size
-      )
+      preview_state$loaded_rows <- if (!is.null(loaded_rows)) loaded_rows else nrow(preview_data)
       preview_state$data <- preview_data
 
       # Update modal
@@ -694,12 +691,12 @@ data_tab_server <- function(input, output, session, values) {
         div(
           style = "margin-top: 15px;",
           p(HTML(paste0(
-            "<strong>Page ", preview_state$current_page, " of ",
-            format(preview_state$total_pages, big.mark = ","), "</strong>",
-            " (rows ", format(start_row, big.mark = ","),
+            "<strong>Page ", preview_state$current_page, "</strong>",
+            " (showing ", format(returned_rows, big.mark = ","), " rows",
+            " from ", format(start_row, big.mark = ","),
             " to ", format(end_row, big.mark = ","),
-            " of ", format(total_rows, big.mark = ","),
-            " total <strong>", preview_state$currency, " options</strong>)"
+            " of ", format(preview_state$loaded_rows, big.mark = ","),
+            " loaded <strong>", preview_state$currency, " options</strong>)"
           ))),
           DT::dataTableOutput("data_tab-preview_table")
         ),
@@ -722,30 +719,15 @@ data_tab_server <- function(input, output, session, values) {
               )
             ),
             div(
-              style = "display: flex; align-items: center; gap: 10px;",
-              span("Go to page:"),
-              numericInput(
-                "data_tab-preview_goto_page",
-                label = NULL,
-                value = preview_state$current_page,
-                min = 1,
-                max = preview_state$total_pages,
-                step = 1,
-                width = "100px"
-              ),
-              actionButton(
-                "data_tab-preview_goto",
-                "Go",
-                class = "btn-info"
-              )
+              style = "text-align: center;",
+              sprintf("Page %d", preview_state$current_page)
             ),
             div(
               actionButton(
                 "data_tab-preview_next",
                 "Next →",
                 class = "btn-primary",
-                disabled = if (preview_state$current_page >=
-                                preview_state$total_pages) {
+                disabled = if (returned_rows < preview_state$page_size) {
                   "disabled"
                 } else {
                   NULL
@@ -812,23 +794,8 @@ data_tab_server <- function(input, output, session, values) {
   })
 
   # Go to page button
-  observeEvent(input$preview_goto, {
-    req(input$preview_goto_page)
-
-    target_page <- input$preview_goto_page
-
-    # Validate page number
-    if (target_page >= 1 && target_page <= preview_state$total_pages &&
-        target_page != preview_state$current_page) {
-      showModal(modalDialog(
-        title = "Loading...",
-        progress_indicator(paste("Loading page", target_page, "...")),
-        footer = NULL,
-        easyClose = FALSE
-      ))
-      load_preview_page(target_page)
-    }
-  })
+  # Note: Go to page functionality removed due to memory optimization
+  # (we no longer count total pages to avoid scanning entire dataset)
 
   # Render preview table
   output$preview_table <- DT::renderDataTable({
