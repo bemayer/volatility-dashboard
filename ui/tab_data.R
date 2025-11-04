@@ -570,7 +570,7 @@ data_tab_server <- function(input, output, session, values) {
         # hourly aggregation. This ensures ONE observation per hour
         # (aggregating all options) for valid time series
         s3_data <- query_deribit_optimized(
-          s3_url = "./deribit_orderbook.parquet",
+          s3_url = "https://deribit-data-bucket.s3.amazonaws.com/deribit_orderbook.parquet",
           currency = input$currency,
           instrument_type = "option",
           sample_size = input$sample_size,
@@ -666,7 +666,7 @@ data_tab_server <- function(input, output, session, values) {
 
       # Query data for this page (raw data for preview - no aggregation needed)
       preview_data <- query_deribit_optimized(
-        s3_url = "./deribit_orderbook.parquet",
+        s3_url = "https://deribit-data-bucket.s3.amazonaws.com/deribit_orderbook.parquet",
         currency = preview_state$currency,
         instrument_type = "option",
         sample_size = preview_state$page_size,
@@ -861,7 +861,7 @@ data_tab_server <- function(input, output, session, values) {
 
         # Query data
         download_data <- query_deribit_optimized(
-          s3_url = "./deribit_orderbook.parquet",
+          s3_url = "https://deribit-data-bucket.s3.amazonaws.com/deribit_orderbook.parquet",
           currency = input$currency,
           instrument_type = "option",
           sample_size = input$sample_size
