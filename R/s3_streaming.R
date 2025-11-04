@@ -33,8 +33,37 @@ query_deribit_optimized <- function(
       sprintf("📡 Querying %s %s data from S3...", currency, instrument_type)
     )
 
-    # Open dataset (lazy evaluation - no data loaded yet)
-    ds <- arrow::open_dataset(s3_url)
+    # Open dataset with proper S3 support
+    # Parse S3 URL to extract bucket and key
+    if (grepl("^https?://", s3_url)) {
+      # Parse S3 URL: https://bucket.s3.amazonaws.com/key or https://s3.amazonaws.com/bucket/key
+      if (grepl("\\.s3\\.amazonaws\\.com/", s3_url)) {
+        # Format: https://bucket.s3.amazonaws.com/key
+        bucket_match <- regmatches(s3_url, regexec("https?://([^.]+)\\.s3\\.amazonaws\\.com/(.+)", s3_url))[[1]]
+        if (length(bucket_match) == 3) {
+          bucket <- bucket_match[2]
+          key <- bucket_match[3]
+        } else {
+          stop("Could not parse S3 URL format")
+        }
+      } else {
+        stop("Unsupported S3 URL format. Use: https://bucket.s3.amazonaws.com/key")
+      }
+
+      message(sprintf("📦 Accessing S3: bucket=%s, key=%s", bucket, key))
+
+      # Create S3 filesystem with anonymous access (public bucket)
+      s3_fs <- arrow::S3FileSystem$create(anonymous = TRUE)
+
+      # Open dataset using S3 filesystem
+      ds <- arrow::open_dataset(
+        source = file.path(bucket, key),
+        filesystem = s3_fs
+      )
+    } else {
+      # Local file path
+      ds <- arrow::open_dataset(s3_url)
+    }
 
     # Apply filters with predicate pushdown
     # Arrow only reads matching row groups - MUCH faster!
