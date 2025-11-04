@@ -71,6 +71,14 @@ query_deribit_optimized <- function(
     # Apply filters with predicate pushdown
     # Arrow only reads matching row groups - MUCH faster!
 
+    # MEMORY OPTIMIZATION: Fetch only what we need WITHOUT counting first
+    # Counting requires scanning all data which can cause OOM on large datasets
+    # Instead, we fetch more than needed and limit after
+    rows_to_fetch <- sample_size + offset + 5000
+
+    message(sprintf("📥 Loading up to %s rows (memory-optimized streaming)...",
+                    format(rows_to_fetch, big.mark = ",")))
+
     # Select columns based on whether we need aggregation
     if (aggregate_by_hour) {
       filtered <- ds %>%
@@ -96,7 +104,8 @@ query_deribit_optimized <- function(
           currency,
           instrument_type
         ) %>%
-        dplyr::collect()  # Materialize filtered data
+        head(rows_to_fetch) %>%  # LIMIT BEFORE COLLECT - saves memory!
+        dplyr::collect()  # Materialize only limited data
     } else {
       filtered <- ds %>%
         dplyr::filter(
@@ -119,7 +128,8 @@ query_deribit_optimized <- function(
           currency,
           instrument_type
         ) %>%
-        dplyr::collect()  # Materialize filtered data
+        head(rows_to_fetch) %>%  # LIMIT BEFORE COLLECT - saves memory!
+        dplyr::collect()  # Materialize only limited data
     }
 
     if (nrow(filtered) == 0) {
@@ -133,7 +143,7 @@ query_deribit_optimized <- function(
 
     message(
       sprintf(
-        "✅ Filtered to %s rows with valid data",
+        "✅ Loaded %s rows into memory (streamed from S3)",
         format(nrow(filtered), big.mark = ",")
       )
     )
@@ -172,15 +182,15 @@ query_deribit_optimized <- function(
     }
 
     # Apply offset and limit for pagination
-    total_rows <- nrow(sorted)
+    sorted_count <- nrow(sorted)
     start_row <- offset + 1
-    end_row <- min(offset + sample_size, total_rows)
+    end_row <- min(offset + sample_size, sorted_count)
 
-    if (start_row > total_rows) {
+    if (start_row > sorted_count) {
       stop(
         sprintf(
-          "Offset %s exceeds total available rows %s",
-          offset, total_rows
+          "Offset %s exceeds loaded rows %s",
+          offset, sorted_count
         )
       )
     }
@@ -190,10 +200,9 @@ query_deribit_optimized <- function(
 
     message(
       sprintf(
-        "📦 Returning rows %s to %s (of %s total)",
-        format(start_row, big.mark = ","),
-        format(end_row, big.mark = ","),
-        format(total_rows, big.mark = ",")
+        "📦 Returning %s rows (offset %s)",
+        format(nrow(result), big.mark = ","),
+        format(offset, big.mark = ",")
       )
     )
     message(
@@ -205,9 +214,10 @@ query_deribit_optimized <- function(
 
     # Return data with metadata
     result_df <- as.data.frame(result)
-    attr(result_df, "total_rows") <- total_rows
+    attr(result_df, "loaded_rows") <- sorted_count    # Rows loaded to memory
     attr(result_df, "start_row") <- start_row
     attr(result_df, "end_row") <- end_row
+    attr(result_df, "returned_rows") <- nrow(result)  # Rows returned
 
     return(result_df)
 
