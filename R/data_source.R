@@ -76,8 +76,8 @@ process_price_data <- function(prices, price_column = NULL) {
 #' @param header Whether file has header
 #' @param sep Column separator
 #' @return Processed data list
-read_csv_data <- function(file_path, date_col, price_col, header = TRUE,
-                          sep = ",") {
+read_csv_data <- function(file_path, date_col, price_col,
+                          header = TRUE, sep = ",") {
   tryCatch(
     {
       # Read CSV
@@ -100,7 +100,9 @@ read_csv_data <- function(file_path, date_col, price_col, header = TRUE,
 
       # Clean price data
       data[[price_col]] <- as.numeric(data[[price_col]])
-      data <- data[!is.na(data[[date_col]]) & !is.na(data[[price_col]])]
+      data <- data[
+        !is.na(data[[date_col]]) & !is.na(data[[price_col]])
+      ]
 
       if (nrow(data) < 10) {
         stop("Insufficient valid data points")
@@ -203,7 +205,7 @@ generate_sample_data <- function(type = "bitcoin", n = 1000) {
   )
 
   if (type == "bitcoin") {
-    # Bitcoin - like high volatility
+    # Bitcoin-like high volatility
     returns <- rnorm(n, mean = 0.001, sd = 0.05)
     # Add volatility clustering
     volatility <- rep(0.05, n)
@@ -213,7 +215,7 @@ generate_sample_data <- function(type = "bitcoin", n = 1000) {
       returns[i] <- rnorm(1, mean = 0.001, sd = volatility[i])
     }
   } else if (type == "sp500") {
-    # S&P 500 - like moderate volatility
+    # S&P 500-like moderate volatility
     returns <- rnorm(n, mean = 0.0003, sd = 0.015)
   } else {
     # Random walk

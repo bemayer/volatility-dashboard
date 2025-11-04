@@ -54,7 +54,11 @@ metric_info_box <- function(title, value, subtitle = NULL,
                             icon = "info", color = "blue") {
   valueBox(
     value = value,
-    subtitle = if (!is.null(subtitle)) paste(title, "-", subtitle) else title,
+    subtitle = if (!is.null(subtitle)) {
+      paste(title, "-", subtitle)
+    } else {
+      title
+    },
     icon = icon(icon),
     color = color,
     width = NULL
@@ -113,7 +117,10 @@ model_card <- function(model) {
         h5(style = "margin: 0; color: #2c3e50;", model_name),
         p(style = "margin: 5px 0; color: #7f8c8d;", model_type),
         if (!is.null(description)) {
-          p(style = "margin: 5px 0; font-size: 12px; color: #95a5a6;", description)
+          p(
+            style = "margin: 5px 0; font-size: 12px; color: #95a5a6;",
+            description
+          )
         },
         if (param_text != "") {
           p(
@@ -137,7 +144,8 @@ model_card <- function(model) {
 #' @param sort_direction Current sort direction
 #' @return Shiny span with sortable header
 sortable_header <- function(column_name, display_name,
-                            current_sort = NULL, sort_direction = "asc") {
+                            current_sort = NULL,
+                            sort_direction = "asc") {
   arrow <- if (!is.null(current_sort) && current_sort == column_name) {
     if (sort_direction == "asc") "↑" else "↓"
   } else {
@@ -152,14 +160,17 @@ sortable_header <- function(column_name, display_name,
 
 #' Create parameter input based on type
 #' @param param_name Parameter name
-#' @param param_type Parameter type ("numeric", "integer", "choice", "logical")
+#' @param param_type Parameter type
+#'   ("numeric", "integer", "choice", "logical")
 #' @param default_value Default value
 #' @param choices Choices for selection (if type = "choice")
 #' @param min Minimum value (for numeric/integer)
 #' @param max Maximum value (for numeric/integer)
 #' @return Shiny input control
-create_parameter_input <- function(param_name, param_type, default_value = NULL,
-                                   choices = NULL, min = NULL, max = NULL) {
+create_parameter_input <- function(param_name, param_type,
+                                   default_value = NULL,
+                                   choices = NULL, min = NULL,
+                                   max = NULL) {
   input_id <- paste0("param_", gsub("[^A-Za-z0-9]", "_", param_name))
 
   switch(param_type,
@@ -169,7 +180,11 @@ create_parameter_input <- function(param_name, param_type, default_value = NULL,
       value = default_value,
       min = min,
       max = max,
-      step = if (is.null(min) || is.null(max)) 0.01 else (max - min) / 100
+      step = if (is.null(min) || is.null(max)) {
+        0.01
+      } else {
+        (max - min) / 100
+      }
     ),
     "integer" = numericInput(
       input_id,

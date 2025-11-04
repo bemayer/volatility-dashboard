@@ -64,7 +64,7 @@ fit_naive_models <- function(train, full) {
 
     # Subsequent forecasts use previous actual test observations
     for (h in 2:test_length) {
-      forecasts_rw[h] <- test_target[h-1] # Use actual previous observation
+      forecasts_rw[h] <- test_target[h - 1]
     }
   } else {
     # Fallback: use last training observation
@@ -115,7 +115,7 @@ fit_moving_average_models <- function(train, full,
 
       if (!is.null(test_target) && length(test_target) >= test_length) {
         # Use actual rolling window approach with real data
-        # Combine training   +  test data for rolling calculations
+        # Combine training + test data for rolling calculations
         combined_data <- c(train_target, test_target)
         train_length <- length(train_target)
 
@@ -167,10 +167,10 @@ fit_adaptive_moving_average <- function(train, full, max_window = 50) {
   best_window <- 5
   best_error <- Inf
 
-  # Simple optimization: choose window that minimizes in - sample error
+  # Simple optimization: choose window that minimizes in-sample error
   for (window in windows) {
     if (window <= length(train_target)) {
-      # Calculate rolling MA for in - sample evaluation
+      # Calculate rolling MA for in-sample evaluation
       n_train <- length(train_target)
       errors <- numeric()
 
@@ -303,7 +303,8 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
       debug_log(paste("EWMA Debug - Using mean fallback:", last_ewma))
     }
 
-    if (!is.null(test_target) && length(test_target) >= test_length && !any(is.na(test_target))) {
+    if (!is.null(test_target) && length(test_target) >= test_length &&
+        !any(is.na(test_target))) {
       # Dynamic EWMA updating with real data (like in thesis)
       current_ewma <- last_ewma
 
@@ -388,7 +389,8 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
     }
 
     # Dynamic EWMA prediction function (like in thesis)
-    if (!is.null(test_target) && length(test_target) >= test_length && !any(is.na(test_target))) {
+    if (!is.null(test_target) && length(test_target) >= test_length &&
+        !any(is.na(test_target))) {
       forecasts <- numeric(test_length)
       current_ewma <- last_ewma
 
@@ -442,9 +444,11 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
 #' @param train List with target and returns from training period
 #' @param full List with target and returns from full dataset
 #' @param garch_specs List of GARCH specifications
-#' @param target_type Type of target volatility ("squared", "rolling_std", "absolute")
+#' @param target_type Type of target volatility
+#'   ("squared", "rolling_std", "absolute")
 #' @return List of GARCH model predictions
-fit_garch_models <- function(train, full, garch_specs, target_type = "squared") {
+fit_garch_models <- function(train, full, garch_specs,
+                              target_type = "squared") {
   train_target <- train$target
   full_target <- full$target
   test_length <- length(full_target) - length(train_target)
@@ -472,7 +476,9 @@ fit_garch_models <- function(train, full, garch_specs, target_type = "squared") 
             tryCatch(
               {
                 # Combine train and test returns for out.sample approach
-                test_returns <- full$returns[(length(returns) + 1):length(full$returns)]
+                test_returns <- full$returns[
+                  (length(returns) + 1):length(full$returns)
+                ]
                 combined_returns <- c(returns, test_returns)
 
                 # Refit model with combined data using out.sample
@@ -493,68 +499,97 @@ fit_garch_models <- function(train, full, garch_specs, target_type = "squared") 
                     )
                     # Adjust scale based on target type
                     if (target_type == "rolling_std") {
-                      predictions <- as.numeric(sigma(forecast))  # Standard deviation
+                      # Standard deviation
+                      predictions <- as.numeric(sigma(forecast))
                     } else {
-                      predictions <- as.numeric(sigma(forecast))^2  # Variance
+                      # Variance
+                      predictions <- as.numeric(sigma(forecast))^2
                     }
                   } else {
                     forecast <- ugarchforecast(combined_fit, n.ahead = 1)
                     # Adjust scale based on target type
                     if (target_type == "rolling_std") {
-                      predictions <- as.numeric(sigma(forecast))  # Standard deviation
+                      # Standard deviation
+                      predictions <- as.numeric(sigma(forecast))
                     } else {
-                      predictions <- as.numeric(sigma(forecast))^2  # Variance
+                      # Variance
+                      predictions <- as.numeric(sigma(forecast))^2
                     }
                   }
 
-                  debug_log(paste("GARCH", spec_name, "- Used rolling forecast with out.sample"))
+                  debug_log(
+                    paste(
+                      "GARCH", spec_name,
+                      "- Used rolling forecast with out.sample"
+                    )
+                  )
                 } else {
                   # If combined fit fails, use original fit for static forecast
-                  forecast <- ugarchforecast(fit, n.ahead = min(test_length, 100))
+                  forecast <- ugarchforecast(
+                    fit, n.ahead = min(test_length, 100)
+                  )
                   sigma_forecast <- as.numeric(sigma(forecast))
 
                   if (length(sigma_forecast) < test_length) {
                     sigma_forecast <- c(
                       sigma_forecast,
-                      rep(tail(sigma_forecast, 1), test_length - length(sigma_forecast))
+                      rep(
+                        tail(sigma_forecast, 1),
+                        test_length - length(sigma_forecast)
+                      )
                     )
                   }
 
                   # Adjust scale based on target type
                   if (target_type == "rolling_std") {
-                    predictions <- sigma_forecast  # Standard deviation
+                    predictions <- sigma_forecast
                   } else {
-                    # Adjust scale based on target type
-            if (target_type == "rolling_std") {
-              predictions <- sigma_forecast  # Standard deviation
-            } else {
-              predictions <- sigma_forecast^2  # Variance
-            }  # Variance
+                    predictions <- sigma_forecast^2
                   }
-                  debug_log(paste("GARCH", spec_name, "- Used static forecast (combined fit failed)"))
+                  debug_log(
+                    paste(
+                      "GARCH", spec_name,
+                      "- Used static forecast (combined fit failed)"
+                    )
+                  )
                 }
               },
               error = function(e) {
-                debug_log(paste("GARCH", spec_name, "out.sample forecast failed:", e$message))
+                debug_log(
+                  paste(
+                    "GARCH", spec_name,
+                    "out.sample forecast failed:", e$message
+                  )
+                )
 
                 # Fallback to static forecast with original fit
-                forecast <- ugarchforecast(fit, n.ahead = min(test_length, 100))
+                forecast <- ugarchforecast(
+                  fit, n.ahead = min(test_length, 100)
+                )
                 sigma_forecast <- as.numeric(sigma(forecast))
 
                 if (length(sigma_forecast) < test_length) {
                   sigma_forecast <- c(
                     sigma_forecast,
-                    rep(tail(sigma_forecast, 1), test_length - length(sigma_forecast))
+                    rep(
+                      tail(sigma_forecast, 1),
+                      test_length - length(sigma_forecast)
+                    )
                   )
                 }
 
                 # Adjust scale based on target type
                 if (target_type == "rolling_std") {
-                  predictions <<- sigma_forecast  # Standard deviation
+                  predictions <<- sigma_forecast
                 } else {
-                  predictions <<- sigma_forecast^2  # Variance
+                  predictions <<- sigma_forecast^2
                 }
-                debug_log(paste("GARCH", spec_name, "- Used static forecast (error fallback)"))
+                debug_log(
+                  paste(
+                    "GARCH", spec_name,
+                    "- Used static forecast (error fallback)"
+                  )
+                )
               }
             )
           } else {
@@ -565,7 +600,10 @@ fit_garch_models <- function(train, full, garch_specs, target_type = "squared") 
             if (length(sigma_forecast) < test_length) {
               sigma_forecast <- c(
                 sigma_forecast,
-                rep(tail(sigma_forecast, 1), test_length - length(sigma_forecast))
+                rep(
+                  tail(sigma_forecast, 1),
+                  test_length - length(sigma_forecast)
+                )
               )
             }
 
@@ -575,7 +613,9 @@ fit_garch_models <- function(train, full, garch_specs, target_type = "squared") 
             } else {
               predictions <- sigma_forecast^2  # Variance
             }
-            debug_log(paste("GARCH", spec_name, "- Used static forecasting (fallback)"))
+            debug_log(
+              paste("GARCH", spec_name, "- Used static forecasting (fallback)")
+            )
           }
 
           debug_log(paste(
@@ -685,7 +725,8 @@ prepare_nn_data <- function(returns, target_volatility, lags = 20) {
 
   for (i in 1:(n - lags)) {
     x_matrix[i, ] <- as.numeric(returns[i:(i + lags - 1)]^2)
-    y[i] <- as.numeric(target_volatility[i + lags])  # Use actual target volatility
+    # Use actual target volatility
+    y[i] <- as.numeric(target_volatility[i + lags])
   }
 
   return(list(X = x_matrix, y = y))
@@ -707,7 +748,8 @@ prepare_lstm_data <- function(returns, target_volatility, lags = 20) {
 
   for (i in 1:(n - lags)) {
     x_array[i, , 1] <- as.numeric(returns[i:(i + lags - 1)]^2)
-    y[i] <- as.numeric(target_volatility[i + lags])  # Use actual target volatility
+    # Use actual target volatility
+    y[i] <- as.numeric(target_volatility[i + lags])
   }
 
   return(list(X = x_array, y = y))
@@ -718,7 +760,8 @@ prepare_lstm_data <- function(returns, target_volatility, lags = 20) {
 #' @param full List with target and returns from full dataset
 #' @param architecture Vector specifying layer sizes
 #' @param lags Number of input lags
-#' @param target_type Type of target volatility ("squared", "rolling_std", "absolute")
+#' @param target_type Type of target volatility
+#'   ("squared", "rolling_std", "absolute")
 #' @return List with neural network predictions
 fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
                                lags = 20, target_type = "squared") {
@@ -796,14 +839,20 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
 
       for (h in 1:test_length) {
         # Prepare test data for current forecast (pseudo-out-of-sample)
-        available_returns <- combined_returns[1:(length(train_returns) + h - 1)]
+        available_returns <- combined_returns[
+          1:(length(train_returns) + h - 1)
+        ]
         if (length(available_returns) >= lags) {
           # Use last 'lags' returns as features
           features <- tail(available_returns, lags)^2
           features_scaled <- (features - x_mean) / x_sd
 
           # Predict with MLP
-          pred_scaled <- predict(mlp_model, matrix(features_scaled, nrow = 1), verbose = 0)
+          pred_scaled <- predict(
+            mlp_model,
+            matrix(features_scaled, nrow = 1),
+            verbose = 0
+          )
           mlp_forecasts[h] <- as.numeric(pred_scaled) * y_sd + y_mean
         } else {
           mlp_forecasts[h] <- y_mean # Fallback
@@ -873,7 +922,9 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
 
       for (h in 1:test_length) {
         # Prepare test data for current forecast (pseudo-out-of-sample)
-        available_returns <- combined_returns[1:(length(train_returns) + h - 1)]
+        available_returns <- combined_returns[
+          1:(length(train_returns) + h - 1)
+        ]
         if (length(available_returns) >= lags) {
           # Use last 'lags' returns as features (3D array for LSTM)
           features <- tail(available_returns, lags)^2
@@ -1036,10 +1087,16 @@ fit_har_models <- function(train, full, extended = FALSE) {
 
           for (h in 1:test_length) {
             # Pseudo-out-of-sample: use only training model (no refitting)
-            # Create features using data up to prediction point (h-1 test observations)
-            available_target <- combined_target[1:(length(train_target) + h - 1)]
+            # Create features using data up to prediction point
+            # (h-1 test observations)
+            available_target <- combined_target[
+              1:(length(train_target) + h - 1)
+            ]
             current_features <- create_har_features(available_target)
-            last_features <- tail(current_features[complete.cases(current_features), ], 1)
+            last_features <- tail(
+              current_features[complete.cases(current_features), ],
+              1
+            )
 
             if (nrow(last_features) > 0) {
               har_forecasts[h] <- predict(har_model, newdata = last_features)
@@ -1072,7 +1129,10 @@ fit_har_models <- function(train, full, extended = FALSE) {
             # Create extended HAR features
             train_returns <- train$returns
             full_returns <- full$returns
-            combined_returns <- c(train_returns, full_returns[(length(train_returns) + 1):length(full_returns)])
+            combined_returns <- c(
+              train_returns,
+              full_returns[(length(train_returns) + 1):length(full_returns)]
+            )
             combined_target <- c(train_target, test_target)
 
             har_ext_features <- create_har_extended_features(train_returns, train_target)
@@ -1082,7 +1142,9 @@ fit_har_models <- function(train, full, extended = FALSE) {
             x_train_ext <- har_ext_features
 
             # Remove missing values
-            complete_cases_ext <- complete.cases(cbind(y_train_ext, x_train_ext))
+            complete_cases_ext <- complete.cases(
+              cbind(y_train_ext, x_train_ext)
+            )
             y_clean_ext <- y_train_ext[complete_cases_ext]
             x_clean_ext <- x_train_ext[complete_cases_ext, ]
 
@@ -1097,16 +1159,29 @@ fit_har_models <- function(train, full, extended = FALSE) {
               if (!is.null(test_target) && length(test_target) >= test_length) {
                 for (h in 1:test_length) {
                   # Create extended features using data up to prediction point
-                  available_returns <- combined_returns[1:(length(train_returns) + h - 1)]
-                  available_target <- combined_target[1:(length(train_target) + h - 1)]
+                  available_returns <- combined_returns[
+                    1:(length(train_returns) + h - 1)
+                  ]
+                  available_target <- combined_target[
+                    1:(length(train_target) + h - 1)
+                  ]
 
                   if (length(available_returns) >= length(train_returns) &&
                     length(available_target) >= length(train_target)) {
-                    current_ext_features <- create_har_extended_features(available_returns, available_target)
-                    last_ext_features <- tail(current_ext_features[complete.cases(current_ext_features), ], 1)
+                    current_ext_features <- create_har_extended_features(
+                      available_returns,
+                      available_target
+                    )
+                    last_ext_features <- tail(
+                      current_ext_features[complete.cases(current_ext_features), ],
+                      1
+                    )
 
                     if (nrow(last_ext_features) > 0) {
-                      har_ext_forecasts[h] <- predict(har_ext_model, newdata = last_ext_features)
+                      har_ext_forecasts[h] <- predict(
+                        har_ext_model,
+                        newdata = last_ext_features
+                      )
                     } else {
                       har_ext_forecasts[h] <- mean(train_target, na.rm = TRUE)
                     }
@@ -1117,8 +1192,14 @@ fit_har_models <- function(train, full, extended = FALSE) {
               } else {
                 # Static forecast using last available features
                 last_ext_features <- tail(x_clean_ext, 1)
-                prediction_ext <- predict(har_ext_model, newdata = last_ext_features)
-                har_ext_forecasts <- rep(as.numeric(prediction_ext), test_length)
+                prediction_ext <- predict(
+                  har_ext_model,
+                  newdata = last_ext_features
+                )
+                har_ext_forecasts <- rep(
+                  as.numeric(prediction_ext),
+                  test_length
+                )
               }
 
               results[["HAR_RV_Extended"]] <- list(

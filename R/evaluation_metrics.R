@@ -13,8 +13,8 @@ calculate_mse <- function(actual, predicted) {
   }
 
   # Remove missing values
-  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
-    is.finite(predicted)
+  valid_idx <- !is.na(actual) & !is.na(predicted) &
+    is.finite(actual) & is.finite(predicted)
   actual_clean <- actual[valid_idx]
   predicted_clean <- predicted[valid_idx]
 
@@ -47,8 +47,8 @@ calculate_mae <- function(actual, predicted) {
   }
 
   # Remove missing values
-  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
-    is.finite(predicted)
+  valid_idx <- !is.na(actual) & !is.na(predicted) &
+    is.finite(actual) & is.finite(predicted)
   actual_clean <- actual[valid_idx]
   predicted_clean <- predicted[valid_idx]
 
@@ -69,8 +69,8 @@ calculate_mape <- function(actual, predicted) {
   }
 
   # Remove missing values and zero actual values
-  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
-    is.finite(predicted) & actual != 0
+  valid_idx <- !is.na(actual) & !is.na(predicted) &
+    is.finite(actual) & is.finite(predicted) & actual != 0
   actual_clean <- actual[valid_idx]
   predicted_clean <- predicted[valid_idx]
 
@@ -91,8 +91,9 @@ calculate_qlike <- function(actual, predicted) {
   }
 
   # Remove missing values and ensure positive values
-  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
-    is.finite(predicted) & actual > 0 & predicted > 0
+  valid_idx <- !is.na(actual) & !is.na(predicted) &
+    is.finite(actual) & is.finite(predicted) &
+    actual > 0 & predicted > 0
   actual_clean <- actual[valid_idx]
   predicted_clean <- predicted[valid_idx]
 
@@ -114,8 +115,9 @@ calculate_log_loss <- function(actual, predicted) {
   }
 
   # Remove missing values and ensure positive values
-  valid_idx <- !is.na(actual) & !is.na(predicted) & is.finite(actual) &
-    is.finite(predicted) & actual > 0 & predicted > 0
+  valid_idx <- !is.na(actual) & !is.na(predicted) &
+    is.finite(actual) & is.finite(predicted) &
+    actual > 0 & predicted > 0
   actual_clean <- actual[valid_idx]
   predicted_clean <- predicted[valid_idx]
 
@@ -292,7 +294,9 @@ pairwise_dm_tests <- function(actual, model_results, alpha = 0.05) {
 #' @param benchmark_name Name of benchmark model (default "Previous_Value")
 #' @param alpha Significance level
 #' @return Data frame with models and their p-values vs benchmark
-dm_tests_vs_benchmark <- function(actual, model_results, benchmark_name = "Previous_Value", alpha = 0.05) {
+dm_tests_vs_benchmark <- function(actual, model_results,
+                                   benchmark_name = "Previous_Value",
+                                   alpha = 0.05) {
   model_names <- names(model_results)
 
   # Check if benchmark exists

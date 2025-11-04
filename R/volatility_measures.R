@@ -78,7 +78,8 @@ calculate_realized_volatility <- function(intraday_returns) {
 #' @param intraday_returns Matrix or list of intraday returns
 #' @return Vector of daily bi-power variation
 calculate_bipower_variation <- function(intraday_returns) {
-  mu1 <- sqrt(2 / pi)  # E[|Z|] for standard normal Z
+  # E[|Z|] for standard normal Z
+  mu1 <- sqrt(2 / pi)
 
   if (is.matrix(intraday_returns)) {
     result <- numeric(nrow(intraday_returns))
@@ -86,9 +87,10 @@ calculate_bipower_variation <- function(intraday_returns) {
       returns <- intraday_returns[i, ]
       returns <- returns[!is.na(returns)]
       if (length(returns) > 1) {
-        bpv <- (pi / 2) * sum(abs(returns[-1]) *
-                                abs(returns[-length(returns)]),
-                              na.rm = TRUE)
+        bpv <- (pi / 2) * sum(
+          abs(returns[-1]) * abs(returns[-length(returns)]),
+          na.rm = TRUE
+        )
         result[i] <- bpv / mu1^2
       } else {
         result[i] <- NA
@@ -162,8 +164,8 @@ calculate_target_volatility <- function(returns, measure_type,
 
 #' Annualize volatility
 #' @param volatility Vector of volatility values
-#' @param frequency Frequency of data ("daily" = 252, "weekly" = 52,
-#'   "monthly" = 12)
+#' @param frequency Frequency of data
+#'   ("daily" = 252, "weekly" = 52, "monthly" = 12)
 #' @return Annualized volatility
 annualize_volatility <- function(volatility, frequency = "daily") {
   scaling_factor <- switch(frequency,
@@ -208,24 +210,34 @@ validate_measure_params <- function(measure_type, window = NULL,
   measures <- get_available_measures()
 
   if (!measure_type %in% names(measures)) {
-    return(list(valid = FALSE,
-                message = paste("Unknown measure type:", measure_type)))
+    return(list(
+      valid = FALSE,
+      message = paste("Unknown measure type:", measure_type)
+    ))
   }
 
   measure_info <- measures[[measure_type]]
 
   if (measure_info$requires_window) {
     if (is.null(window)) {
-      return(list(valid = FALSE,
-                  message = "Window size required for this measure"))
+      return(list(
+        valid = FALSE,
+        message = "Window size required for this measure"
+      ))
     }
 
     if (window < 2) {
-      return(list(valid = FALSE, message = "Window size must be at least 2"))
+      return(list(
+        valid = FALSE,
+        message = "Window size must be at least 2"
+      ))
     }
 
     if (!is.null(data_length) && window > data_length) {
-      return(list(valid = FALSE, message = "Window size exceeds data length"))
+      return(list(
+        valid = FALSE,
+        message = "Window size exceeds data length"
+      ))
     }
   }
 
