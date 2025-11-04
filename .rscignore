@@ -1,0 +1,46 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# R project files
+.Rproj.user
+*.Rproj
+.RData
+.Rhistory
+
+# Large data files (using S3 streaming instead)
+*.parquet
+*.csv
+*.rds
+*.rda
+deribit_orderbook.parquet
+
+# Scripts not needed for deployment
+download_deribit_data.R
+test_s3_streaming.R
+
+# Documentation
+*.md
+README.md
+GIT_LFS_SETUP.md
+GITHUB_ACTIONS_GUIDE.md
+GUIDE_PUBLICATION.md
+GUIDE_DEPLOIEMENT_SHINY.md
+S3_STREAMING_GUIDE.md
+S3_STREAMING_IMPLEMENTATION_SUMMARY.md
+IMPROVEMENT_REPORT.md
+IMPROVEMENTS_SUMMARY.md
+EXHAUSTIVE_TEST_REPORT.md
+
+# Playwright screenshots
+.playwright-mcp/
+
+# GitHub workflows (not needed on shinyapps.io)
+.github/
+
+# Temporary files
+nul
+package-lock.json
+package.json
+playwright_tests.spec.js

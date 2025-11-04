@@ -1,0 +1,41 @@
+Package: VolatilityDashboard
+Type: Package
+Title: Volatility Modeling Dashboard for Financial Time Series
+Version: 1.0.0
+Authors@R: person("Benoît", "Mayer", email = "mayer.benoit@gmail.com",
+                  role = c("aut", "cre"))
+Description: An interactive Shiny dashboard for volatility modeling and forecasting.
+    Supports multiple model families including GARCH, EWMA, MA, and machine learning models.
+    Integrates Yahoo Finance data and Deribit BTC options data. Provides comprehensive
+    statistical analysis, model comparison with Diebold-Mariano tests, and interactive
+    visualizations using Plotly.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+Depends:
+    R (>= 4.0.0)
+Imports:
+    shiny (>= 1.7.0),
+    shinydashboard (>= 0.7.0),
+    DT (>= 0.20),
+    plotly (>= 4.10.0),
+    dplyr (>= 1.0.0),
+    quantmod (>= 0.4.18),
+    rugarch (>= 1.4-6),
+    xts (>= 0.12.0),
+    zoo (>= 1.8.0),
+    moments (>= 0.14),
+    forecast (>= 8.15),
+    ggplot2 (>= 3.3.0),
+    viridis (>= 0.6.0),
+    nortest (>= 1.0-4),
+    FinTS (>= 0.4-9),
+    arrow (>= 10.0.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+URL: https://github.com/bemayer/volatility-dashboard
+BugReports: https://github.com/bemayer/volatility-dashboard/issues
