@@ -8,6 +8,8 @@ A comprehensive R Shiny application for modeling and forecasting financial volat
 [![Shiny](https://img.shields.io/badge/Shiny-1.7%2B-brightgreen.svg)](https://shiny.rstudio.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+The dashboard is available at: [bemayer.shinyapps.io/volatility-dashboard](https://bemayer.shinyapps.io/volatility-dashboard/).
+
 ## 🚀 Features
 
 ### 📈 **Data Integration**
