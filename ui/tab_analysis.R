@@ -75,7 +75,7 @@ analysis_tab_ui <- function(id) {
       fluidRow(
         box(
           title = "Normality Tests",
-          status = "warning",
+          status = "info",
           solidHeader = TRUE,
           width = 6,
           h5("Test Results"),
@@ -87,14 +87,18 @@ analysis_tab_ui <- function(id) {
               "border-radius: 5px;"
             ),
             p(strong("Interpretation:"), style = "margin: 0;"),
-            p("p-value < 0.05 suggests rejection of normality hypothesis",
+            p(
+              paste(
+                "p-value < 0.05 suggests rejection",
+                "of normality hypothesis"
+              ),
               style = "margin: 5px 0 0 0; font-size: 12px;"
             )
           )
         ),
         box(
           title = "Stationarity Tests",
-          status = "warning",
+          status = "info",
           solidHeader = TRUE,
           width = 6,
           h5("Test Results"),
@@ -105,10 +109,14 @@ analysis_tab_ui <- function(id) {
               "background: #fff3cd; padding: 10px; ",
               "border-radius: 5px;"
             ),
-            p(strong("ADF Test:"), "p-value < 0.05 suggests stationarity",
+            p(
+              strong("ADF Test:"),
+              "p-value < 0.05 suggests stationarity",
               style = "margin: 0; font-size: 12px;"
             ),
-            p(strong("KPSS Test:"), "p-value > 0.05 suggests stationarity",
+            p(
+              strong("KPSS Test:"),
+              "p-value > 0.05 suggests stationarity",
               style = "margin: 5px 0 0 0; font-size: 12px;"
             )
           )
@@ -130,7 +138,8 @@ analysis_tab_ui <- function(id) {
               "background: #d1ecf1; padding: 10px; ",
               "border-radius: 5px;"
             ),
-            p(strong("ARCH-LM Test:"),
+            p(
+              strong("ARCH-LM Test:"),
               paste0(
                 "p-value < 0.05 suggests presence of ARCH effects ",
                 "(volatility clustering)"
@@ -165,7 +174,7 @@ analysis_tab_ui <- function(id) {
       fluidRow(
         box(
           title = "Time Series Analysis",
-          status = "success",
+          status = "primary",
           solidHeader = TRUE,
           width = 12,
           tabsetPanel(
@@ -187,8 +196,13 @@ analysis_tab_ui <- function(id) {
                 fluidRow(
                   column(
                     6,
-                    numericInput(ns("rolling_window_viz"), "Rolling Window:",
-                      value = 30, min = 5, max = 252, step = 1
+                    numericInput(
+                      ns("rolling_window_viz"),
+                      "Rolling Window:",
+                      value = 30,
+                      min = 5,
+                      max = 252,
+                      step = 1
                     )
                   )
                 ),
@@ -217,27 +231,28 @@ analysis_tab_ui <- function(id) {
 
       <h5>Statistical Tests</h5>
       <ul>
-  <li><strong>Jarque-Bera:</strong> Tests normality assumption</li>
-  <li><strong>Anderson-Darling:</strong>
-        Alternative normality test</li>
-        <li><strong>ADF:</strong> Tests for unit root
-  (non-stationarity)</li>
-        <li><strong>KPSS:</strong> Tests stationarity (complementary to ADF)
-        </li>
-        <li><strong>ARCH-LM:</strong> Tests for volatility clustering</li>
+  <li><strong>Jarque-Bera:</strong> Tests normality
+      assumption</li>
+  <li><strong>Anderson-Darling:</strong> Alternative normality
+      test</li>
+  <li><strong>ADF:</strong> Tests for unit root
+      (non-stationarity)</li>
+  <li><strong>KPSS:</strong> Tests stationarity
+      (complementary to ADF)</li>
+  <li><strong>ARCH-LM:</strong> Tests for volatility
+      clustering</li>
       </ul>
 
       <h5>Interpretation Guidelines</h5>
       <ul>
-        <li><strong>Normal Returns:</strong> Rare in financial data, expect
-        rejection</li>
-        <li><strong>Stationary Returns:</strong>
-        Expected for return series</li>
-        <li><strong>ARCH Effects:</strong>
-        Common in financial returns, justifies
-        GARCH models</li>
-        <li><strong>Autocorrelation:</strong> Should be minimal in efficient
-        markets</li>
+        <li><strong>Normal Returns:</strong> Rare in financial data,
+            expect rejection</li>
+        <li><strong>Stationary Returns:</strong> Expected for return
+            series</li>
+        <li><strong>ARCH Effects:</strong> Common in financial
+            returns, justifies GARCH models</li>
+        <li><strong>Autocorrelation:</strong> Should be minimal in
+            efficient markets</li>
       </ul>
       "
     )
@@ -256,7 +271,8 @@ analysis_tab_server <- function(input, output, session, values) {
 
   # Check if data is available
   output$data_available <- reactive({
-    !is.null(values$processed_data) && !is.null(values$processed_data$returns)
+    !is.null(values$processed_data) &&
+      !is.null(values$processed_data$returns)
   })
   outputOptions(output, "data_available", suspendWhenHidden = FALSE)
 
@@ -388,7 +404,7 @@ analysis_tab_server <- function(input, output, session, values) {
         line = list(color = "#2c3e50", dash = "dash")
       ) %>%
       layout(
-        title = "Q - Q Plot vs Normal Distribution",
+        title = "Q-Q Plot vs Normal Distribution",
         xaxis = list(title = "Theoretical Quantiles"),
         yaxis = list(title = "Sample Quantiles"),
         showlegend = FALSE
@@ -535,7 +551,7 @@ analysis_tab_server <- function(input, output, session, values) {
 
     tryCatch(
       {
-        # ARCH - LM test using FinTS package
+        # ARCH-LM test using FinTS package
         arch_test_5 <- FinTS::ArchTest(returns, lags = 5)
         arch_test_10 <- FinTS::ArchTest(returns, lags = 10)
 
@@ -591,16 +607,19 @@ analysis_tab_server <- function(input, output, session, values) {
       Lag = 0:max_lag,
       ACF = as.numeric(acf_result$acf),
       Significant = abs(as.numeric(acf_result$acf)) >
-        1.96 / sqrt(length(series))
+        (1.96 / sqrt(length(series)))
     )
 
     confidence_level <- 1.96 / sqrt(length(series))
 
-    p <- plot_ly(plot_data,
-      x = ~Lag, y = ~ACF, type = "bar",
-      marker = list(color = ~ ifelse(Significant,
-                    "#e74c3c", "#3498db"
-      ))
+    p <- plot_ly(
+      plot_data,
+      x = ~Lag,
+      y = ~ACF,
+      type = "bar",
+      marker = list(
+        color = ~ ifelse(Significant, "#e74c3c", "#3498db")
+      )
     ) %>%
       layout(
         title = title,
@@ -748,11 +767,12 @@ analysis_tab_server <- function(input, output, session, values) {
         line = list(color = "#e74c3c")
       ) %>%
       layout(
-        title = paste("Rolling Statistics (", window, " - period window)"),
+        title = paste("Rolling Statistics (", window, "-period window)"),
         xaxis = list(title = "Date"),
         yaxis = list(title = "Rolling Mean", side = "left"),
         yaxis2 = list(
-          title = "Rolling Volatility", side = "right",
+          title = "Rolling Volatility",
+          side = "right",
           overlaying = "y"
         ),
         hovermode = "x unified",

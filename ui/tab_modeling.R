@@ -30,8 +30,8 @@ modeling_tab_ui <- function(id) {
             h4("Processed Data Required", style = "color: #e67e22;"),
             p(
               paste(
-                "Please load data and apply configuration in the",
-                "Data Selection tab first."
+                "Please load data and apply configuration in the Data",
+                "Selection tab first."
               ),
               style = "color: #d68910;"
             )
@@ -108,29 +108,33 @@ modeling_tab_ui <- function(id) {
           width = 4,
           p("Add common model combinations quickly:"),
           actionButton(
-            ns("preset_basic"), "Basic Models",
+            ns("preset_basic"),
+            "Basic Models",
             class = "btn-outline-info",
             style = "width: 100%; margin: 2px;"
           ),
           tags$small("Naive + MA + EWMA"),
           br(), br(),
           actionButton(
-            ns("preset_garch"), "GARCH Suite",
+            ns("preset_garch"),
+            "GARCH Suite",
             class = "btn-outline-info",
             style = "width: 100%; margin: 2px;"
           ),
           tags$small("GARCH(1,1) variants with different distributions"),
           br(), br(),
           actionButton(
-            ns("preset_advanced"), "Advanced Models",
+            ns("preset_advanced"),
+            "Advanced Models",
             class = "btn-outline-info",
             style = "width: 100%; margin: 2px;"
           ),
           tags$small("ML + HAR-RV + Extended GARCH"),
           br(), br(),
           actionButton(
-            ns("preset_thesis"), "Thesis Replication",
-            class = "btn-outline-warning",
+            ns("preset_thesis"),
+            "Thesis Replication",
+            class = "btn-outline-primary",
             style = "width: 100%; margin: 2px;"
           ),
           tags$small("All models from the original thesis"),
@@ -173,7 +177,7 @@ modeling_tab_ui <- function(id) {
             6,
             box(
               title = "Performance Metrics Visualization",
-              status = "warning",
+              status = "info",
               solidHeader = TRUE,
               width = 12,
               selectInput(
@@ -236,8 +240,8 @@ modeling_tab_ui <- function(id) {
               h4("No Results Yet", style = "color: #7f8c8d;"),
               p(
                 paste(
-                  "Configure and run models to see performance comparison",
-                  "and forecasts."
+                  "Configure and run models to see performance",
+                  "comparison and forecasts."
                 ),
                 style = "color: #95a5a6;"
               )
@@ -259,12 +263,12 @@ modeling_tab_ui <- function(id) {
         with configurable periods</li>
         <li><strong>EWMA:</strong> Exponentially weighted moving averages
         (RiskMetrics methodology)</li>
-        <li><strong>GARCH:</strong> Generalized autoregressive conditional
-        heteroscedasticity models</li>
-        <li><strong>Neural Networks:</strong> Multi-layer perceptrons
-        and LSTM networks</li>
+        <li><strong>GARCH:</strong> Generalized autoregressive
+            conditional heteroscedasticity models</li>
+        <li><strong>Neural Networks:</strong> Multi-layer
+            perceptrons and LSTM networks</li>
         <li><strong>HAR-RV:</strong> Heterogeneous autoregressive
-        realized volatility models</li>
+            realized volatility models</li>
       </ul>
 
       <h5>Performance Metrics</h5>
@@ -904,7 +908,8 @@ modeling_tab_server <- function(input, output, session, values) {
 
   # Legacy function - no longer needed since renderUI is reactive
   update_models_ui <- function() {
-    # renderUI will update automatically when modeling_data$selected_models changes
+    # renderUI will update automatically when
+    # modeling_data$selected_models changes
     invisible()
   }
 
@@ -1245,8 +1250,10 @@ modeling_tab_server <- function(input, output, session, values) {
               pageLength = 15,
               scrollX = TRUE,
               columnDefs = list(
-                list(className = "dt-center", targets = c(1, 2)), # p_value and Significance columns
-                list(className = "dt-left", targets = 0) # Model names column
+                # p_value and Significance columns
+                list(className = "dt-center", targets = c(1, 2)),
+                # Model names column
+                list(className = "dt-left", targets = 0)
               )
             ),
             rownames = FALSE
@@ -1313,7 +1320,9 @@ modeling_tab_server <- function(input, output, session, values) {
     # Prepare train/test split line data for layout
 
     # Add model forecasts (on test period only)
-    test_dates <- values$processed_data$dates[values$processed_data$test_indices]
+    test_dates <- values$processed_data$dates[
+      values$processed_data$test_indices
+    ]
 
     if (!is.null(input$viz_model) && input$viz_model != "") {
       # Show selected model on full period
@@ -1323,7 +1332,9 @@ modeling_tab_server <- function(input, output, session, values) {
 
       debug_log(paste("*** SINGLE FORECAST VISUALIZATION DEBUG ***"))
       debug_log(paste("Selected Model:", input$viz_model))
-      debug_log(paste("Selected predictions length:", length(selected_predictions)))
+      debug_log(
+        paste("Selected predictions length:", length(selected_predictions))
+      )
       debug_log(paste("Test dates length:", length(test_dates)))
       debug_log(paste(
         "Original predictions range:",
@@ -1332,8 +1343,13 @@ modeling_tab_server <- function(input, output, session, values) {
       ))
       # Ensure data lengths match
       if (length(selected_predictions) != length(test_dates)) {
-        debug_log(paste("Length mismatch! Predictions:", length(selected_predictions),
-                       "Dates:", length(test_dates)), "WARNING")
+        debug_log(
+          paste(
+            "Length mismatch! Predictions:", length(selected_predictions),
+            "Dates:", length(test_dates)
+          ),
+          "WARNING"
+        )
         # Use the shorter length to avoid errors
         min_length <- min(length(selected_predictions), length(test_dates))
         selected_predictions <- selected_predictions[1:min_length]
@@ -1393,103 +1409,4 @@ modeling_tab_server <- function(input, output, session, values) {
       type = "message"
     )
   }, ignoreInit = TRUE)
-#   observe({
-#   models <- modeling_data$selected_models
-#   debug_log(paste("*** OBSERVE TRIGGERED - Models count:", length(models)))
-
-#   lapply(names(models), function(model_id) {
-#     btn_id <- paste0("remove_", gsub("[^A-Za-z0-9]", "_", modeling_data$selected_models[[model_id]]$name))
-#     debug_log(paste("Setting up observer for button:", btn_id, "model_id:", model_id))
-
-
-#     debug_log(paste("Current input value for", btn_id, ":", input[[btn_id]]))
-#     debug_log(input)
-
-#     observeEvent(input[[btn_id]], {
-#       debug_log(paste("Clicked remove button for model_id:", model_id, "btn_id:", btn_id))
-#       modeling_data$selected_models[[model_id]] <- NULL
-#       debug_log(paste("Model removed. Remaining models:", length(modeling_data$selected_models)))
-#     }, ignoreInit = TRUE, once = TRUE)
-#   })
-# })
-# observe({
-#   btn_ids <- sapply(modeling_data$selected_models, function(m) paste0("remove_", gsub("[^A-Za-z0-9]", "_", m$name)))
-#   if (length(btn_ids) == 0) {
-#     return()
-#   }
-#   debug_log(input)
-#   debug_log(input[[btn_ids[1]]])
-#   clicked <- btn_ids[sapply(btn_ids, function(id) !is.null(input[[id]]) && input[[id]] > 0)]
-#   debug_log(paste("*** OBSERVE TRIGGERED - Models count:", length(modeling_data$selected_models), "Clicked buttons:", paste(clicked, collapse = ", ")))
-#   if (length(clicked) > 0) {
-#     # Suppose qu'un seul bouton est cliqué à la fois
-#     btn_id <- clicked[1]
-#     model_id <- names(modeling_data$selected_models)[which(btn_ids == btn_id)]
-#     debug_log(paste("Clicked remove button for model_id:", model_id, "btn_id:", btn_id))
-#     modeling_data$selected_models[[model_id]] <- NULL
-#     update_models_ui()
-#   }
-# })
-
-  # # Store observers for remove buttons to avoid duplicates
-  # remove_observers <- reactiveValues()
-
-  # # Handle remove button clicks by creating individual observers
-  # observe({
-  #   debug_log(paste("*** OBSERVE TRIGGERED - Models count:", length(modeling_data$selected_models)))
-
-  #   if (length(modeling_data$selected_models) > 0) {
-  #     debug_log("*** MODELS AVAILABLE, creating observers...")
-
-  #     for (model_id in names(modeling_data$selected_models)) {
-  #       model_name <- modeling_data$selected_models[[model_id]]$name
-  #       base_button_id <- paste0("remove_", gsub("[^A-Za-z0-9]", "_", model_name))
-
-  #       debug_log(paste("*** Checking model:", model_name, "-> base_button_id:", base_button_id))
-
-  #       # Create observer only if it doesn't exist yet
-  #       if (is.null(remove_observers[[base_button_id]])) {
-  #         debug_log(paste("*** Creating observer for button:", base_button_id))
-
-  #         # Create a local copy of variables for the closure
-  #         local_model_id <- model_id
-  #         local_base_button_id <- base_button_id
-  #         local_model_name <- model_name
-
-  #         # The button has a namespace, so we reference it without namespace in observeEvent
-  #         remove_observers[[base_button_id]] <- observeEvent(input[[local_base_button_id]], {
-  #           debug_log(paste("*** REMOVE BUTTON CLICKED for model:", local_model_name))
-
-  #           if (!is.null(input[[local_base_button_id]]) && input[[local_base_button_id]] > 0) {
-  #             debug_log(paste("*** Removing model with ID:", local_model_id))
-
-  #             # Remove the model from the list
-  #             modeling_data$selected_models[[local_model_id]] <- NULL
-
-  #             # Remove the observer
-  #             remove_observers[[local_base_button_id]] <- NULL
-
-  #             # Update the UI
-  #             update_models_ui()
-
-  #             # Show success notification
-  #             safe_notification(
-  #               paste("Removed model:", local_model_name),
-  #               type = "message"
-  #             )
-
-  #             debug_log(paste(
-  #               "*** Model removed successfully. Remaining models:",
-  #               length(modeling_data$selected_models)
-  #             ))
-  #           }
-  #         }, ignoreInit = TRUE)
-  #       } else {
-  #         debug_log(paste("*** Observer already exists for button:", base_button_id))
-  #       }
-  #     }
-  #   } else {
-  #     debug_log("*** No models available")
-  #   }
-  # })
 }
