@@ -53,7 +53,10 @@ query_deribit_optimized <- function(
       message(sprintf("📦 Accessing S3: bucket=%s, key=%s", bucket, key))
 
       # Create S3 filesystem with anonymous access (public bucket)
-      s3_fs <- arrow::S3FileSystem$create(anonymous = TRUE)
+      s3_fs <- arrow::S3FileSystem$create(
+        anonymous = TRUE,
+        region = "eu-west-3"  # Bucket is in Paris region
+      )
 
       # Open dataset using S3 filesystem
       ds <- arrow::open_dataset(
