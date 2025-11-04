@@ -203,7 +203,7 @@ preview_parquet <- function(file_path = "deribit_orderbook.parquet") {
   schema <- pf$schema
 
   cat("Parquet file schema:\n")
-  for (i in 1:length(schema$names)) {
+  for (i in seq_along(schema$names)) {
     cat(paste(" ", i, schema$names[i], ":", schema$field(i - 1)$type, "\n"))
   }
 
