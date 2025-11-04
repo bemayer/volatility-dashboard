@@ -94,4 +94,4 @@ __pycache__/
 
 # Temporary files
 tmp/
-temp/
+temp/test_memory_optimization.R
