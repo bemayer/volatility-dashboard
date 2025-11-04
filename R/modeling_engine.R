@@ -304,7 +304,7 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
     }
 
     if (!is.null(test_target) && length(test_target) >= test_length &&
-        !any(is.na(test_target))) {
+          !any(is.na(test_target))) {
       # Dynamic EWMA updating with real data (like in thesis)
       current_ewma <- last_ewma
 
@@ -390,7 +390,7 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
 
     # Dynamic EWMA prediction function (like in thesis)
     if (!is.null(test_target) && length(test_target) >= test_length &&
-        !any(is.na(test_target))) {
+          !any(is.na(test_target))) {
       forecasts <- numeric(test_length)
       current_ewma <- last_ewma
 
@@ -448,7 +448,7 @@ fit_ewma_models <- function(train, full, lambdas = c(0.94, 0.97),
 #'   ("squared", "rolling_std", "absolute")
 #' @return List of GARCH model predictions
 fit_garch_models <- function(train, full, garch_specs,
-                              target_type = "squared") {
+                             target_type = "squared") {
   train_target <- train$target
   full_target <- full$target
   test_length <- length(full_target) - length(train_target)
@@ -702,7 +702,7 @@ create_additional_garch_specs <- function() {
     )
   }
 
-  return(specs)
+  specs
 }
 
 # ============================================================================
@@ -789,9 +789,9 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
       # Set random seed for reproducibility
       tensorflow::set_random_seed(6)
 
-# ============================================================================
-# MLP MODEL
-# ============================================================================
+      # ============================================================================
+      # MLP MODEL
+      # ============================================================================
 
       # Prepare training data for MLP using actual target volatility
       train_target <- train$target
@@ -825,7 +825,7 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
       })
 
       # Train MLP model
-      history_mlp <- mlp_model %>% fit(
+      mlp_model %>% fit(
         x_train_scaled, y_train_scaled,
         epochs = 100,
         batch_size = 32,
@@ -880,9 +880,9 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
         description = "MLP (50-25-1)"
       )
 
-# ============================================================================
-# LSTM MODEL
-# ============================================================================
+      # ============================================================================
+      # LSTM MODEL
+      # ============================================================================
 
       # Prepare training data for LSTM using actual target volatility
       lstm_train_data <- prepare_lstm_data(train_returns, train_target, lags = lags)
@@ -909,7 +909,7 @@ fit_neural_network <- function(train, full, architecture = c(50, 25, 1),
       })
 
       # Train LSTM model
-      history_lstm <- lstm_model %>% fit(
+      lstm_model %>% fit(
         x_train_lstm_scaled, y_train_lstm_scaled,
         epochs = 100,
         batch_size = 32,
@@ -1167,7 +1167,7 @@ fit_har_models <- function(train, full, extended = FALSE) {
                   ]
 
                   if (length(available_returns) >= length(train_returns) &&
-                    length(available_target) >= length(train_target)) {
+                        length(available_target) >= length(train_target)) {
                     current_ext_features <- create_har_extended_features(
                       available_returns,
                       available_target
